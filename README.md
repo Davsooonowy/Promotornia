@@ -7,6 +7,6 @@ skład zespołu:
 
 - Antoni Kucharski - backend developer <br>
 - Piotr Sielchanowicz - backend developer <br>
-- Adam Konior - fullstack developer <br>
-- Mateusz Maciaszczyk - frontend developer <br>
+- Adam Konior - frontend developer <br>
+- Mateusz Maciaszczyk - fullstack developer <br>
 - Dawid Mularczzyk - PM, fullstack developer 
