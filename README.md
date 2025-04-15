@@ -5,8 +5,8 @@ Promotornia umożliwia studentom przeglądanie dostępnych promotorów, zapoznan
 
 skład zespołu:
 
-Antoni Kucharski - backend developer
-Piotr Sielchanowicz - backend developer
-Adam Konior - fullstack developer
-Mateusz Maciaszczyk - frontend developer 
-Dawid Mularczzyk - PM, fullstack developer
+- Antoni Kucharski - backend developer <br>
+- Piotr Sielchanowicz - backend developer <br>
+- Adam Konior - fullstack developer <br>
+- Mateusz Maciaszczyk - frontend developer <br>
+- Dawid Mularczzyk - PM, fullstack developer 
