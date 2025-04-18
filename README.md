@@ -10,3 +10,10 @@ skład zespołu:
 - Adam Konior - frontend developer <br>
 - Mateusz Maciaszczyk - fullstack developer <br>
 - Dawid Mularczzyk - PM, fullstack developer 
+
+
+technologie:
+
+- frontend: NextJS + React <br>
+- backend: Django <br>
+- baza danych: PostgreSQL
