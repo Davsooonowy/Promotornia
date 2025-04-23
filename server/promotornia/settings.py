@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'accounts',
 ]
 
 REST_USE_JWT = True
@@ -129,6 +130,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'accounts.SystemUser'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
