@@ -1,4 +1,4 @@
-import NavigationItem from "@/util/NavigationItem"
+import NavigationItem from "@/types/NavigationItem"
 import {
   NavigationMenu,
   NavigationMenuItem,

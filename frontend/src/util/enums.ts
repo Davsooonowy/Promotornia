@@ -4,4 +4,4 @@ enum UserRole {
   dean,
 }
 
-export default UserRole
+export { UserRole }
