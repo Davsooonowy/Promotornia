@@ -1,21 +1,34 @@
 
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from re import match
+import re
+from .models import SystemUser
 
 class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = User
-        fields = 'email', 'first_name', 'last_name', 'password'
+        model = SystemUser
+        fields = ('email', 'first_name', 'last_name', 'password',
+                  'is_student', 'is_supervisor', 'is_dean')
 
-    def validate_email(self, value):
-        return match(r"^.*@(student\.)?\.agh\.edu\.pl$", value)
+    def validate(self, data):
+        email = data.get('email')
+        password = data.get('password')
+        if email is None:
+            raise serializers.ValidationError('Email field is required')
+        if password is None:
+            raise serializers.ValidationError('Password field is required')
+        if re.match(r"^.*@(student\.)?agh\.edu\.pl$", email) is None:
+            raise serializers.ValidationError('Invalid email')
+
+        is_student = data.get('is_student')
+        is_supervisor = data.get('is_supervisor')
+        is_dean = data.get('is_dean')
+
+        if [is_student, is_supervisor, is_dean].count(True) != 1:
+            raise serializers.ValidationError('Expected exactly one of is_student, is_supervisor, is_dean to be True')
+
+        return data
 
     def create(self, validated_data):
-        user = User.objects.create_user(
-            username=f'{validated_data["first_name"]} {validated_data["last_name"]}',
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
+        user = SystemUser.objects.create_user(**validated_data)
         return user
