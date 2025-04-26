@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import Providers from "@/components/tanstack/Providers"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="pl">
       <body className="h-screen bg-blue-100">
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   )
