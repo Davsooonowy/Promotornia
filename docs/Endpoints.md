@@ -43,3 +43,8 @@ headers: {
 | email     | string    | Tak      | E-mail   |
 | password     | string    | Tak      | Hasło   |
 
+## Odpowiedź
+
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| token     | string    | Tak      | Token JWT   |
