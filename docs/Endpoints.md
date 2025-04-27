@@ -33,3 +33,13 @@ headers: {
   Authorization: "Bearer TUTAJ_TOKEN",
   "Content-Type": "application/json",
 }
+
+# Endpoint POST /user/login
+
+## Ciało
+
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| email     | string    | Tak      | E-mail   |
+| password     | string    | Tak      | Hasło   |
+

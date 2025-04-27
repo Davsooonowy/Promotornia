@@ -9,6 +9,7 @@ import { jwtDecode } from "jwt-decode"
 import { LoginFormData, JwtPayload, LoginFormDataSchema } from "@/util/types"
 import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
+import apiUrl from "@/util/apiUrl"
 
 export default function Home() {
   const router = useRouter()
@@ -48,6 +49,13 @@ export default function Home() {
       }
       const token =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJkZWFuIn0.O5k7CaZmg82JkAB2fgNIJCy_MH-BWeKUiJGxF3y91RI"
+      // const response = await fetch(`${apiUrl}/user/login`, {
+      //   method: "POST",
+      //   body: JSON.stringify({
+      //     email: formData.email,
+      //     password: formData.password,
+      //   }),
+      // })
       localStorage.setItem("token", token)
       const decoded = jwtDecode<JwtPayload>(token)
       if (decoded && decoded.role && decoded.userId) {
