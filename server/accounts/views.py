@@ -5,7 +5,6 @@ from rest_framework import status
 from .serializers import RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-# Create your views here.
 
 class RegisterView(APIView):
 

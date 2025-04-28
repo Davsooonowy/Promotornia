@@ -4,3 +4,4 @@ dj-rest-auth
 django-cors-headers
 djangorestframework-simplejwt
 django-allauth
+dotenv
