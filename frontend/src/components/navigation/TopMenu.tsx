@@ -1,32 +1,53 @@
-import NavigationItem from "@/types/NavigationItem"
+import { NavigationItem } from "@/util/types"
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuLink,
 } from "../ui/navigation-menu"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { CiUser } from "react-icons/ci"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 function TopMenu(props: { navItems: NavigationItem[]; userRoleHref: string }) {
+  const router = useRouter()
+  const [logout, setLogout] = useState(false)
+
+  useEffect(() => {
+    if (logout) {
+      localStorage.removeItem("token")
+      router.push("/")
+    }
+  }, [logout, router])
+
   return (
-    <div className="flex min-h-8 w-full justify-between">
-      <div className="flex px-12">
-        <NavigationMenu>
-          <NavigationMenuList>
-            {props.navItems.map((navItem) => (
-              <NavigationMenuItem key={navItem.href}>
-                <NavigationMenuLink asChild>
-                  <Link href={navItem.href}>{navItem.text}</Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            ))}
-          </NavigationMenuList>
-        </NavigationMenu>
+    <div className="flex min-h-8 w-full justify-between px-10">
+      <NavigationMenu>
+        <NavigationMenuList>
+          {props.navItems.map((navItem) => (
+            <NavigationMenuItem key={navItem.href}>
+              <NavigationMenuLink asChild>
+                <Link href={navItem.href}>{navItem.text}</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          ))}
+        </NavigationMenuList>
+      </NavigationMenu>
+      <div className="flex items-center space-x-4">
+        <Button
+          variant="default"
+          className="cursor-pointer"
+          onClick={() => setLogout(true)}
+        >
+          Wyloguj
+        </Button>
+        <Link href={`/protected/${props.userRoleHref}/profile`}>
+          <Button variant="secondary" className="cursor-pointer">
+            Profil
+          </Button>
+        </Link>
       </div>
-      <Link href={`/protected/${props.userRoleHref}/profile`}>
-        <CiUser size={72} className="mr-5 cursor-pointer" />
-      </Link>
     </div>
   )
 }

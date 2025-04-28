@@ -18,7 +18,10 @@ export default function RootLayout({
   const [render, setRender] = useState(false)
 
   useEffect(() => {
-    if (isTokenError) router.push("/")
+    if (isTokenError) {
+      router.push("/")
+      return
+    }
     if (tokenPayload) setRender(true)
   }, [tokenPayload, isTokenError, router])
 
@@ -33,9 +36,7 @@ export default function RootLayout({
       {render ? (
         <div>
           {getTopMenu()}
-          <div className="flex h-screen w-full items-center justify-center">
-            {children}
-          </div>
+          <div className="flex h-screen w-full p-12 pt-4">{children}</div>
         </div>
       ) : (
         "Authorizing..."
