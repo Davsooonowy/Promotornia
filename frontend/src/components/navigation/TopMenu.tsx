@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import useDecodeToken from "@/hooks/useDecodeToken"
 
 function TopMenu(props: { navItems: NavigationItem[]; userRoleHref: string }) {
   const router = useRouter()
@@ -75,11 +76,17 @@ function StudentTopMenu() {
 }
 
 function SupervisorTopMenu() {
+  const { tokenPayload } = useDecodeToken()
+
+  if (!tokenPayload) {
+    return null
+  }
+
   return (
     <TopMenu
       navItems={[
         {
-          href: "/protected/supervisor/theses/own/1",
+          href: `/protected/supervisor/theses/own/${tokenPayload.userId}`,
           text: "Moje tematy",
         },
         {
