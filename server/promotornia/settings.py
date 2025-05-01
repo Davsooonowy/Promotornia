@@ -53,7 +53,7 @@ REST_USE_JWT = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',  # for cookie-based JWT (optional)
+        # 'dj_rest_auth.jwt_auth.JWTCookieAuthentication',  # for cookie-based JWT (optional)
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
