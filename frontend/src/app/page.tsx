@@ -74,10 +74,13 @@ export default function Home() {
         switch (decoded.role) {
           case "dean":
             router.push("/protected/dean/profile")
+            break
           case "supervisor":
             router.push("/protected/supervisor/profile")
+            break
           case "student":
             router.push("/protected/student/profile")
+            break
         }
       }
     },
@@ -88,10 +91,13 @@ export default function Home() {
       switch (tokenPayload.role) {
         case "dean":
           router.push("/protected/dean/profile")
+          break
         case "supervisor":
           router.push("/protected/supervisor/profile")
+          break
         case "student":
           router.push("/protected/student/profile")
+          break
       }
     }
     if (isTokenError) {
