@@ -65,6 +65,11 @@ class DeanCreateUsersSerializer(serializers.Serializer):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
             validate_email(user_data.get('email', ''))
 
+        existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
+        if existing_users.count() > 0:
+            invalid_emails = map(lambda u: u.email, existing_users)
+            raise serializers.ValidationError(f"Adresy {', '.join(invalid_emails)} są już zajęte")
+
         field_of_study = data.get('fieldOfStudy', {})
         field_id = field_of_study.get('id')
         field_name = field_of_study.get('field')
@@ -88,6 +93,16 @@ class DeanCreateUsersSerializer(serializers.Serializer):
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
-
         add_result = models.SystemUser.objects.bulk_create(users)
         return add_result
+
+class DeanDeleteUsersSerializer(serializers.Serializer):
+    usersToDelete = serializers.ListField()
+
+    def validate(self, data):
+        for user_email in data.get('usersToDelete', []):
+            validate_email(user_email)
+        users = models.SystemUser.objects.filter(email__in=data.get('usersToDelete', []))
+        if users.filter(is_dean=True).count() > 0:
+            raise serializers.ValidationError("Brak uprawnień usuwania pracowników dziekanatu!")
+        return users
