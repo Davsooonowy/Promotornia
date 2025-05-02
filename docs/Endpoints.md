@@ -1,4 +1,4 @@
-# Endpoint: POST /dean/new_users
+# Endpoint: POST /dean/new_users/
 
 **Opis:**
 Zapisuje w bazie danych użytkowników z podanymi e-mailami i wygenerowanymi hasłami oraz wysyła na te e-maile wygenerowane hasła.
@@ -21,7 +21,7 @@ headers: {
 
 Na razie zakładamy, że nie tylko student, ale i promotor działają tylko na jednym kierunku studiów (chociaż z wymagań wynika, że promotor może działać nawet na dwóch kierunkach)
 
-# Endpoint DELETE /dean/users
+# Endpoint DELETE /dean/users/
 
 ## Ciało
 
@@ -34,7 +34,7 @@ headers: {
   "Content-Type": "application/json",
 }
 
-# Endpoint POST /user/login
+# Endpoint POST /user/login/
 
 ## Ciało
 
@@ -45,6 +45,19 @@ headers: {
 
 ## Odpowiedź
 
-| Nazwa  | Typ    | Wymagany | Opis                       |
-|--------|--------|----------|----------------------------|
-| token     | string    | Tak      | Token JWT   |
+| Nazwa   | Typ    | Wymagany | Opis                     |
+|---------|--------|----------|--------------------------|
+| access   | string    | Tak      | Token JWT                |
+| refresh | string    | Tak      | Token do odśwerzania JWT |
+
+# Endpoint POST /user/login/refresh/
+
+## Ciało
+| Nazwa   | Typ    | Wymagany | Opis                                           |
+|---------|--------|----------|------------------------------------------------|
+| refresh | string    | Tak      | Token do odświerzania otrzymany przy logowaniu |
+
+## Odpowiedź
+| Nazwa  | Typ    | Wymagany | Opis                  |
+|--------|--------|----------|-----------------------|
+| access | string    | Tak      | Odświerzony token JWT |

@@ -57,7 +57,8 @@ class DeanCreateUsersSerializer(serializers.Serializer):
 
     def validate(self, data):
         user_type = data.get('userType')
-        print(user_type, USER_TYPES, user_type in USER_TYPES, data)
+        if user_type not in USER_TYPES:
+            raise serializers.ValidationError(f'{user_type} nie jest prawidłowym typem użytkownika')
 
         new_users = data.get("newUsers", [])
         for user_data in new_users:
@@ -74,7 +75,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         field_id = field_of_study.get('id')
         field_name = field_of_study.get('field')
 
-        if models.FieldOfStudy.objects.filter(id=field_id, name=field_name).count() == 0:
+        if not models.FieldOfStudy.objects.filter(id=field_id, name=field_name).exists():
             raise serializers.ValidationError(f"Kierunek {field_name} nie istnieje w bazie danych!")
 
         exp_date = data.get('expirationDate')
