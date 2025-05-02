@@ -63,7 +63,6 @@ export function EnhancedNavbar({
       )}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Logo and Brand */}
         <div className="flex items-center gap-2">
           <GraduationCap className="text-primary h-8 w-8" />
           <span className="hidden text-xl font-bold md:inline-block">
