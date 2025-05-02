@@ -1,12 +1,15 @@
-import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
+import useDecodeToken from "@/hooks/useDecodeToken"
 
 export default function ChangePassword() {
+  const { token } = useDecodeToken()
+
   const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [repeatedNewPassword, setRepeatedNewPassword] = useState("")
@@ -31,39 +34,34 @@ export default function ChangePassword() {
       setIsSuccess(null)
 
       if (newPassword !== repeatedNewPassword) {
-        setError("Hasła nie są takie same.")
-        return
+        throw new Error("Hasła nie są takie same.")
       }
-      try {
-        const response = await fetch(`${apiUrl}/dean/new_password`, {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer TUTAJ_TOKEN",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            oldPassword,
-            newPassword,
-          }),
-        })
+      const response = await fetch(`${apiUrl}/user/new_password`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      })
 
-        if (!response.ok) {
-          setError("Nie udało się zmienić hasła. Błąd serwera.")
-          return
-        }
-
-        setIsSuccess(true)
-      } catch (err) {
-        setError("Nie udało się zmienić hasła. Błąd serwera.")
+      if (!response.ok) {
+        throw new Error("Nie udało się zmienić hasła.")
       }
+    },
+    onError: (e) => {
+      setError(e.message)
+    },
+    onSuccess: () => {
+      setIsSuccess(true)
     },
   })
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Profil, email: </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-3">
         <Label>Stare hasło: </Label>
         <Input
@@ -86,7 +84,10 @@ export default function ChangePassword() {
         />
         {error && <Label className="text-red-500">{error}</Label>}
         {isSuccess && <Label className="text-green-500">Hasło zmienione</Label>}
-        <Button onClick={() => changePasswordQuery.mutate()}>
+        <Button
+          onClick={() => changePasswordQuery.mutate()}
+          className="cursor-pointer"
+        >
           Zmień hasło
         </Button>
       </CardContent>
