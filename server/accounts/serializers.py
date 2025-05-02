@@ -101,8 +101,8 @@ class DeanDeleteUsersSerializer(serializers.Serializer):
     usersToDelete = serializers.ListField()
 
     def validate(self, data):
-        for user_email in data.get('usersToDelete', []):
-            validate_email(user_email)
+        for user_data in data.get('usersToDelete', []):
+            validate_email(user_data.get("email", ""))
         users = models.SystemUser.objects.filter(email__in=data.get('usersToDelete', []))
         if users.filter(is_dean=True).count() > 0:
             raise serializers.ValidationError("Brak uprawnień usuwania pracowników dziekanatu!")
