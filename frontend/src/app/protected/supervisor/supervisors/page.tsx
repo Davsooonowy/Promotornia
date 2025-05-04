@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,11 +12,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, User } from "lucide-react"
+import { Search, User, SortAsc, SortDesc, Filter } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import useDecodeToken from "@/hooks/useDecodeToken"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
 
+// Mock data for promoters (same as in dean view)
 const mockPromoters = [
   {
     id: 1,
@@ -26,6 +43,7 @@ const mockPromoters = [
     specialization: "Sztuczna inteligencja",
     availableSlots: 5,
     totalSlots: 10,
+    tags: ["AI", "Machine Learning", "Data Science"],
   },
   {
     id: 2,
@@ -35,6 +53,7 @@ const mockPromoters = [
     specialization: "Analiza danych",
     availableSlots: 2,
     totalSlots: 8,
+    tags: ["Data Analysis", "Big Data", "Statistics"],
   },
   {
     id: 3,
@@ -44,26 +63,159 @@ const mockPromoters = [
     specialization: "Bezpieczeństwo sieci",
     availableSlots: 0,
     totalSlots: 6,
+    tags: ["Network Security", "Cybersecurity", "Cryptography"],
+  },
+  {
+    id: 4,
+    name: "dr hab. Anna Malinowska",
+    email: "a.malinowska@example.com",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    specialization: "Inżynieria oprogramowania",
+    availableSlots: 3,
+    totalSlots: 7,
+    tags: ["Software Engineering", "Agile", "DevOps"],
+  },
+  {
+    id: 5,
+    name: "prof. dr hab. Piotr Kowalczyk",
+    email: "p.kowalczyk@example.com",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    specialization: "Systemy wbudowane",
+    availableSlots: 1,
+    totalSlots: 5,
+    tags: ["Embedded Systems", "IoT", "Hardware"],
+  },
+  {
+    id: 6,
+    name: "dr inż. Magdalena Nowakowska",
+    email: "m.nowakowska@example.com",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    specialization: "Grafika komputerowa",
+    availableSlots: 4,
+    totalSlots: 8,
+    tags: ["Computer Graphics", "3D Modeling", "Visualization"],
+  },
+  {
+    id: 7,
+    name: "dr hab. Krzysztof Adamski",
+    email: "k.adamski@example.com",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    specialization: "Bazy danych",
+    availableSlots: 0,
+    totalSlots: 6,
+    tags: ["Databases", "SQL", "NoSQL"],
+  },
+  {
+    id: 8,
+    name: "dr Joanna Kamińska",
+    email: "j.kaminska@example.com",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    specialization: "Interakcja człowiek-komputer",
+    availableSlots: 2,
+    totalSlots: 5,
+    tags: ["HCI", "UX/UI", "Accessibility"],
   },
 ]
+
+const allTags = Array.from(
+  new Set(mockPromoters.flatMap((promoter) => promoter.tags)),
+)
 
 export default function SupervisorsList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
   const [showOnlyWithSlots, setShowOnlyWithSlots] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const { tokenPayload } = useDecodeToken()
 
-  const filteredPromoters = mockPromoters.filter((promoter) => {
-    const matchesSearch =
-      promoter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      promoter.specialization.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesField =
-      !fieldOfStudy || promoter.department.includes(fieldOfStudy)
-    const matchesSlots = !showOnlyWithSlots || promoter.availableSlots > 0
+  const itemsPerPage = parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-    return matchesSearch && matchesField && matchesSlots
-  })
+  const filteredPromoters = useMemo(() => {
+    let result = mockPromoters.filter((promoter) => {
+      const matchesSearch =
+        promoter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        promoter.specialization
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
+      const matchesField =
+        !fieldOfStudy || promoter.department.includes(fieldOfStudy)
+      const matchesSlots = !showOnlyWithSlots || promoter.availableSlots > 0
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) => promoter.tags.includes(tag))
+
+      return matchesSearch && matchesField && matchesSlots && matchesTags
+    })
+
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        let valueA, valueB
+
+        switch (sortField) {
+          case "name":
+            valueA = a.name
+            valueB = b.name
+            break
+          case "availableSlots":
+            valueA = a.availableSlots
+            valueB = b.availableSlots
+            break
+          case "department":
+            valueA = a.department
+            valueB = b.department
+            break
+          default:
+            return 0
+        }
+
+        if (typeof valueA === "string" && typeof valueB === "string") {
+          return sortDirection === "asc"
+            ? valueA.localeCompare(valueB)
+            : valueB.localeCompare(valueA)
+        } else {
+          return sortDirection === "asc"
+            ? (valueA as number) - (valueB as number)
+            : (valueB as number) - (valueA as number)
+        }
+      })
+    }
+
+    return result
+  }, [
+    searchQuery,
+    fieldOfStudy,
+    showOnlyWithSlots,
+    sortField,
+    sortDirection,
+    selectedTags,
+  ])
+
+  const paginatedPromoters = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredPromoters.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredPromoters, currentPage])
+
+  const totalPages = Math.ceil(filteredPromoters.length / itemsPerPage)
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+    setCurrentPage(1) // Reset to first page when filter changes
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -71,6 +223,10 @@ export default function SupervisorsList() {
     }, 500)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, fieldOfStudy, showOnlyWithSlots, selectedTags])
 
   if (loading) {
     return <SupervisorsListSkeleton />
@@ -123,13 +279,106 @@ export default function SupervisorsList() {
                   Wyświetl tylko z dostępnymi miejscami
                 </Label>
               </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Tagi
+                    {selectedTags.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {selectedTags.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
+                  {allTags.map((tag) => (
+                    <DropdownMenuItem
+                      key={tag}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        toggleTag(tag)
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Checkbox
+                        checked={selectedTags.includes(tag)}
+                        onCheckedChange={() => toggleTag(tag)}
+                        id={`tag-${tag}`}
+                      />
+                      <Label
+                        htmlFor={`tag-${tag}`}
+                        className="flex-grow cursor-pointer"
+                      >
+                        {tag}
+                      </Label>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort("name")}
+                  className="gap-1"
+                >
+                  Nazwisko
+                  {sortField === "name" &&
+                    (sortDirection === "asc" ? (
+                      <SortAsc className="h-4 w-4" />
+                    ) : (
+                      <SortDesc className="h-4 w-4" />
+                    ))}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort("availableSlots")}
+                  className="gap-1"
+                >
+                  Miejsca
+                  {sortField === "availableSlots" &&
+                    (sortDirection === "asc" ? (
+                      <SortAsc className="h-4 w-4" />
+                    ) : (
+                      <SortDesc className="h-4 w-4" />
+                    ))}
+                </Button>
+              </div>
             </div>
+
+            {/* Selected tags display */}
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer"
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag} ×
+                  </Badge>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTags([])}
+                  className="h-6 text-xs"
+                >
+                  Wyczyść wszystkie
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       <div className="space-y-4">
-        {filteredPromoters.length === 0 ? (
+        {paginatedPromoters.length === 0 ? (
           <Card className="bg-slate-50">
             <CardContent className="pt-6 text-center">
               <p>
@@ -138,7 +387,7 @@ export default function SupervisorsList() {
             </CardContent>
           </Card>
         ) : (
-          filteredPromoters.map((promoter) => (
+          paginatedPromoters.map((promoter) => (
             <Card
               key={promoter.id}
               className="bg-slate-50 transition-shadow hover:shadow-md"
@@ -162,6 +411,13 @@ export default function SupervisorsList() {
                     <p className="text-sm">
                       Specjalizacja: {promoter.specialization}
                     </p>
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {promoter.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="text-right">
@@ -194,6 +450,64 @@ export default function SupervisorsList() {
           ))
         )}
       </div>
+
+      {filteredPromoters.length > 0 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className={
+                  currentPage === 1
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const page = i + 1
+
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={page === currentPage}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              }
+
+              if (page === 2 || page === totalPages - 1) {
+                return <PaginationEllipsis key={`ellipsis-${page}`} />
+              }
+
+              return null
+            })}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   )
 }

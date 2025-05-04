@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,11 +11,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, FileText, User } from "lucide-react"
+import { Search, FileText, User, SortAsc, SortDesc, Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 
+// Same mock data as in dean view
 const mockTopics = [
   {
     id: 1,
@@ -26,6 +43,7 @@ const mockTopics = [
     isPublic: true,
     tags: ["AI", "Cyberbezpieczeństwo", "ML"],
     reservedBy: null,
+    createdAt: "2023-05-15",
   },
   {
     id: 2,
@@ -37,6 +55,7 @@ const mockTopics = [
     isPublic: true,
     tags: ["IoT", "Kryptografia", "Bezpieczeństwo"],
     reservedBy: "Anna Kowalczyk",
+    createdAt: "2023-04-20",
   },
   {
     id: 3,
@@ -48,25 +67,166 @@ const mockTopics = [
     isPublic: false,
     tags: ["Frontend", "React", "UI/UX"],
     reservedBy: null,
+    createdAt: "2023-06-10",
+  },
+  {
+    id: 4,
+    title: "Analiza i implementacja systemów rekomendacyjnych w e-commerce",
+    promoter: "dr hab. Anna Malinowska",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    status: "Dostępny",
+    isPublic: true,
+    tags: ["E-commerce", "Recommendation Systems", "Data Mining"],
+    reservedBy: null,
+    createdAt: "2023-05-05",
+  },
+  {
+    id: 5,
+    title: "Zastosowanie blockchain w systemach zarządzania łańcuchem dostaw",
+    promoter: "prof. dr hab. Piotr Kowalczyk",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    status: "Zarezerwowany",
+    isPublic: true,
+    tags: ["Blockchain", "Supply Chain", "Distributed Systems"],
+    reservedBy: "Michał Nowak",
+    createdAt: "2023-03-15",
+  },
+  {
+    id: 6,
+    title:
+      "Metody detekcji anomalii w sieciach komputerowych z wykorzystaniem uczenia maszynowego",
+    promoter: "dr inż. Magdalena Nowakowska",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    status: "Dostępny",
+    isPublic: true,
+    tags: ["Network Security", "Anomaly Detection", "Machine Learning"],
+    reservedBy: null,
+    createdAt: "2023-06-20",
+  },
+  {
+    id: 7,
+    title:
+      "Optymalizacja wydajności aplikacji webowych z wykorzystaniem technik Progressive Web App",
+    promoter: "dr hab. Krzysztof Adamski",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    status: "Zarezerwowany",
+    isPublic: true,
+    tags: ["Web Development", "PWA", "Performance Optimization"],
+    reservedBy: "Karolina Wiśniewska",
+    createdAt: "2023-04-10",
+  },
+  {
+    id: 8,
+    title:
+      "Projektowanie i implementacja systemów rozpoznawania mowy dla języka polskiego",
+    promoter: "dr Joanna Kamińska",
+    department: "Katedra Informatyki/Cyberbezpieczeństwo",
+    status: "Dostępny",
+    isPublic: true,
+    tags: ["Speech Recognition", "NLP", "Polish Language"],
+    reservedBy: null,
+    createdAt: "2023-05-25",
   },
 ]
+
+const allTags = Array.from(new Set(mockTopics.flatMap((topic) => topic.tags)))
 
 export default function ThesisList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [sortField, setSortField] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
-  const filteredTopics = mockTopics.filter((topic) => {
-    const matchesSearch =
-      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      topic.promoter.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesField =
-      !fieldOfStudy || topic.department.includes(fieldOfStudy)
-    const matchesStatus = !statusFilter || topic.status === statusFilter
+  const itemsPerPage = parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-    return matchesSearch && matchesField && matchesStatus
-  })
+  // Filter and sort topics
+  const filteredTopics = useMemo(() => {
+    let result = mockTopics.filter((topic) => {
+      const matchesSearch =
+        topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.promoter.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesField =
+        !fieldOfStudy || topic.department.includes(fieldOfStudy)
+      const matchesStatus = !statusFilter || topic.status === statusFilter
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) => topic.tags.includes(tag))
+
+      return matchesSearch && matchesField && matchesStatus && matchesTags
+    })
+
+    if (sortField) {
+      result = [...result].sort((a, b) => {
+        let valueA, valueB
+
+        switch (sortField) {
+          case "title":
+            valueA = a.title
+            valueB = b.title
+            break
+          case "promoter":
+            valueA = a.promoter
+            valueB = b.promoter
+            break
+          case "date":
+            valueA = new Date(a.createdAt)
+            valueB = new Date(b.createdAt)
+            break
+          default:
+            return 0
+        }
+
+        if (valueA instanceof Date && valueB instanceof Date) {
+          return sortDirection === "asc"
+            ? valueA.getTime() - valueB.getTime()
+            : valueB.getTime() - valueA.getTime()
+        } else if (typeof valueA === "string" && typeof valueB === "string") {
+          return sortDirection === "asc"
+            ? valueA.localeCompare(valueB)
+            : valueB.localeCompare(valueA)
+        } else {
+          return 0
+        }
+      })
+    }
+
+    return result
+  }, [
+    searchQuery,
+    fieldOfStudy,
+    statusFilter,
+    sortField,
+    sortDirection,
+    selectedTags,
+  ])
+
+  // Paginate results
+  const paginatedTopics = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredTopics.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredTopics, currentPage])
+
+  const totalPages = Math.ceil(filteredTopics.length / itemsPerPage)
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+    setCurrentPage(1) // Reset to first page when filter changes
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,6 +234,10 @@ export default function ThesisList() {
     }, 500)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, fieldOfStudy, statusFilter, selectedTags])
 
   if (loading) {
     return <ThesisListSkeleton />
@@ -85,7 +249,6 @@ export default function ThesisList() {
         <h1 className="text-3xl font-bold">Lista tematów</h1>
       </div>
 
-      {/* Search and filters */}
       <Card className="bg-slate-50">
         <CardContent className="pt-6">
           <div className="space-y-4">
@@ -127,21 +290,126 @@ export default function ThesisList() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Tagi
+                    {selectedTags.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {selectedTags.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
+                  {allTags.map((tag) => (
+                    <DropdownMenuItem
+                      key={tag}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        toggleTag(tag)
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Checkbox
+                        checked={selectedTags.includes(tag)}
+                        onCheckedChange={() => toggleTag(tag)}
+                        id={`tag-${tag}`}
+                      />
+                      <Label
+                        htmlFor={`tag-${tag}`}
+                        className="flex-grow cursor-pointer"
+                      >
+                        {tag}
+                      </Label>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort("title")}
+                  className="gap-1"
+                >
+                  Tytuł
+                  {sortField === "title" &&
+                    (sortDirection === "asc" ? (
+                      <SortAsc className="h-4 w-4" />
+                    ) : (
+                      <SortDesc className="h-4 w-4" />
+                    ))}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort("promoter")}
+                  className="gap-1"
+                >
+                  Promotor
+                  {sortField === "promoter" &&
+                    (sortDirection === "asc" ? (
+                      <SortAsc className="h-4 w-4" />
+                    ) : (
+                      <SortDesc className="h-4 w-4" />
+                    ))}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort("date")}
+                  className="gap-1"
+                >
+                  Data
+                  {sortField === "date" &&
+                    (sortDirection === "asc" ? (
+                      <SortAsc className="h-4 w-4" />
+                    ) : (
+                      <SortDesc className="h-4 w-4" />
+                    ))}
+                </Button>
+              </div>
             </div>
+
+            {selectedTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {selectedTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="cursor-pointer"
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag} ×
+                  </Badge>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTags([])}
+                  className="h-6 text-xs"
+                >
+                  Wyczyść wszystkie
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Topics list */}
       <div className="space-y-4">
-        {filteredTopics.length === 0 ? (
+        {paginatedTopics.length === 0 ? (
           <Card className="bg-slate-50">
             <CardContent className="pt-6 text-center">
               <p>Nie znaleziono tematów spełniających kryteria wyszukiwania.</p>
             </CardContent>
           </Card>
         ) : (
-          filteredTopics.map((topic) => (
+          paginatedTopics.map((topic) => (
             <Card
               key={topic.id}
               className="bg-slate-50 transition-shadow hover:shadow-md"
@@ -169,6 +437,9 @@ export default function ThesisList() {
                         </Link>
                       </div>
                       <p className="text-sm">Katedra: {topic.department}</p>
+                      <p className="text-muted-foreground text-sm">
+                        Dodano: {topic.createdAt}
+                      </p>
                     </div>
 
                     <div className="text-right">
@@ -189,6 +460,11 @@ export default function ThesisList() {
                         >
                           Szczegóły
                         </Button>
+                        {topic.status === "Dostępny" && (
+                          <Button size="sm" className="cursor-pointer">
+                            Zarezerwuj
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -217,6 +493,64 @@ export default function ThesisList() {
           ))
         )}
       </div>
+
+      {filteredTopics.length > 0 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className={
+                  currentPage === 1
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const page = i + 1
+
+              if (
+                page === 1 ||
+                page === totalPages ||
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      isActive={page === currentPage}
+                      onClick={() => setCurrentPage(page)}
+                      className="cursor-pointer"
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              }
+
+              if (page === 2 || page === totalPages - 1) {
+                return <PaginationEllipsis key={`ellipsis-${page}`} />
+              }
+
+              return null
+            })}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   )
 }
