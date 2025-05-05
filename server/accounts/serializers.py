@@ -1,6 +1,8 @@
 
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from . import models
 import os
 import datetime
@@ -8,7 +10,7 @@ import random
 
 ALLOWED_DOMAINS = os.getenv('ALLOWED_DOMAINS').split(",")
 USER_TYPES = os.getenv('USER_TYPES').split(",")
-PASSWORD_LENGTH = 50
+PASSWORD_LENGTH = 10
 
 def validate_email(email):
     try:
@@ -88,9 +90,10 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         users = []
         for user_data in validated_data["newUsers"]:
             user_type = "is_" + validated_data["userType"]
+            password = ''.join([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])
             user_dict = {
                 "email": user_data["email"],
-                "password": make_password(str([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])),
+                "password": make_password(password),
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
@@ -98,12 +101,37 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
-    usersToDelete = serializers.ListField()
+    usersToDelete = serializers.ListField(
+        child=serializers.EmailField(),
+        allow_empty=False
+    )
 
     def validate(self, data):
-        for user_data in data.get('usersToDelete', []):
-            validate_email(user_data.get("email", ""))
-        users = models.SystemUser.objects.filter(email__in=data.get('usersToDelete', []))
-        if users.filter(is_dean=True).count() > 0:
+        emails = data.get('usersToDelete', [])
+        for email in emails:
+            validate_email(email)
+
+        users = models.SystemUser.objects.filter(email__in=emails)
+        if users.filter(is_dean=True).exists():
             raise serializers.ValidationError("Brak uprawnień usuwania pracowników dziekanatu!")
+
         return users
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def get_token(self, user):
+        token = super().get_token(user)
+
+        if user.is_dean:
+            token['role'] = 'dean'
+        elif user.is_supervisor:
+            token['role'] = 'supervisor'
+        elif user.is_student:
+            token['role'] = 'student'
+        else:
+            token['role'] = 'unknown'
+
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        return data

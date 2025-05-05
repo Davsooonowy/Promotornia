@@ -10,7 +10,6 @@ import NewUserCard from "@/components/features/manage_users/NewUserCard"
 import ActionDialog from "@/components/features/manage_users/ActionDialog"
 import apiUrl from "@/util/apiUrl"
 import { toast } from "sonner"
-import useDecodeToken from "@/hooks/useDecodeToken"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -31,14 +30,12 @@ export default function ManageUsers() {
   const [expirationDate, setExpirationDate] = useState<Date>(new Date())
   const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
 
-  const { token } = useDecodeToken()
-
   // const [serverResponse, setServerResponse] =
   //   useState<ServerMessageResponse | null>(null)
 
   const actionMutation = useMutation({
     mutationFn: async () => {
-      // validation
+      // Validation
       let validation_ok = true
       for (const newUser of newUsers) {
         const result = NewUserScheme.safeParse(newUser)
@@ -61,52 +58,54 @@ export default function ManageUsers() {
         }
       }
       if (!validation_ok) {
-        toast.error("Wystąpiły błędy. Nie wykonano akcji.")
+        toast.error("Validation errors occurred. Action not performed.")
         return
       }
 
-      let response
-      switch (action) {
-        case "addUsers":
-          response = await fetch(`${apiUrl}/dean/new_users`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userType,
-              newUsers: newUsers.map((newUser) => ({ email: newUser.email })),
-              expirationDate,
-              fieldOfStudy,
-            }),
-          })
-          if (response.ok) {
-            let desc
-            if (action === "addUsers") {
-              desc = `Założono konta ${newUsers.length} użytkownikom i wysłano im e-maile z wygenerowanymi hasłami`
-            }
-            toast.success("Akcja wykonana pomyślnie", {
-              description: desc,
-            })
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${apiUrl}/dean/users/`, {
+          method: action === "addUsers" ? "POST" : "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            action === "addUsers"
+              ? {
+                  userType,
+                  newUsers: newUsers.map((newUser) => ({ email: newUser.email })),
+                  expirationDate: expirationDate.toISOString().split("T")[0],
+                  fieldOfStudy,
+                }
+              : {
+                  usersToDelete: newUsers.map((newUser) => ({
+                    email: newUser.email,
+                  })),
+                },
+          ),
+        })
+
+        if (response.ok) {
+          let desc
+          if (action === "addUsers") {
+            desc = `Stworzono konto dla ${newUsers.length} użytkowników i wysłano im e-maile.`
+          } else {
+            desc = `Usunięto ${newUsers.length} użytkowników.`
           }
-          break
-        case "deleteUsers":
-          response = await fetch(`${apiUrl}/dean/users`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              usersToDelete: newUsers.map((newUser) => ({
-                email: newUser.email,
-              })),
-            }),
+          toast.success("Akcja zakończona sukcesem", {
+            description: desc,
           })
-          break
+          setNewUsers([])
+        } else {
+          const errorData = await response.json()
+          toast.error("Akcja nie powiodła się", {
+            description: errorData.detail || "Wystąpił nieznany błąd.",
+          })
+        }
+      } catch (error) {
+        toast.error("Wystąił nieznany błąd.")
       }
-      // setServerResponse(response)
     },
   })
 

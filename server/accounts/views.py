@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from . import serializers
 from . import permissions
@@ -23,7 +24,6 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class DeanView(APIView):
-
     permission_classes = (IsAuthenticated, permissions.IsDean)
 
     def post(self, request):
@@ -41,3 +41,6 @@ class DeanView(APIView):
             users.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LoginView(TokenObtainPairView):
+    serializer_class = serializers.LoginSerializer
