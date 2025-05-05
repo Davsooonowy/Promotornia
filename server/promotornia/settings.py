@@ -150,3 +150,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'poczta.agh.edu.pl'
+EMAIL_PORT = 465
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "test@agh.edu.pl" # Adres email w domenie AGH
+EMAIL_HOST_PASSWORD = "password"  # Hasło do maila
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

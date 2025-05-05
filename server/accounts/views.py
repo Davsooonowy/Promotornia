@@ -4,6 +4,9 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 
+from django.core.mail import send_mail
+from django.conf import settings
+
 from . import serializers
 from . import permissions
 
@@ -30,7 +33,15 @@ class DeanView(APIView):
         serializer = serializers.DeanCreateUsersSerializer(data=request.data)
         if serializer.is_valid():
             result = serializer.save()
-            # TODO: mailing logic
+            # mailing logic
+            for user in serializer.plaintext_credentials:
+                send_mail(
+                    subject='Twoje konto zostało utworzone',
+                    message=f'Twoje hasło to: {user["password"]}',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user["email"]],
+                    fail_silently=False,
+                )
             return Response(status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

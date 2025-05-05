@@ -65,6 +65,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             if not isinstance(user_data, dict):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
             validate_email(user_data.get('email', ''))
+            user_data["password"] = ''.join([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
@@ -86,14 +87,19 @@ class DeanCreateUsersSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         users = []
+        self.plaintext_credentials = []
         for user_data in validated_data["newUsers"]:
             user_type = "is_" + validated_data["userType"]
             user_dict = {
                 "email": user_data["email"],
-                "password": make_password(str([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])),
+                "password": make_password(user_data["password"]),
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
+            self.plaintext_credentials.append({
+                "email": user_data["email"],
+                "password": user_data["password"]
+            })
         add_result = models.SystemUser.objects.bulk_create(users)
         return add_result
 
