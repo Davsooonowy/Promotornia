@@ -6,26 +6,35 @@ import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
 import useDecodeToken from "@/hooks/useDecodeToken"
+import { PasswordFormDataSchema } from "@/util/types"
 
 export default function ChangePassword() {
   const { token } = useDecodeToken()
 
   const [oldPassword, setOldPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [repeatedNewPassword, setRepeatedNewPassword] = useState("")
+  const [passwordFormData, setPasswordFormData] = useState<{
+    newPassword: string
+    repeatedNewPassword: string
+  }>({
+    newPassword: "",
+    repeatedNewPassword: "",
+  })
+
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState<boolean | null>(null)
 
-  const handleUpdateOldPassword = (value: string) => {
-    setOldPassword(value)
-  }
-
   const handleUpdateNewPassword = (value: string) => {
-    setNewPassword(value)
+    setPasswordFormData((passwordFormData) => ({
+      ...passwordFormData,
+      newPassword: value,
+    }))
   }
 
   const handleUpdateRepeatedNewPassword = (value: string) => {
-    setRepeatedNewPassword(value)
+    setPasswordFormData((passwordFormData) => ({
+      ...passwordFormData,
+      repeatedNewPassword: value,
+    }))
   }
 
   const changePasswordQuery = useMutation({
@@ -33,9 +42,14 @@ export default function ChangePassword() {
       setError(null)
       setIsSuccess(null)
 
-      if (newPassword !== repeatedNewPassword) {
-        throw new Error("Hasła nie są takie same.")
+      const validationResult =
+        PasswordFormDataSchema.safeParse(passwordFormData)
+
+      if (!validationResult.success) {
+        const fieldErrors = validationResult.error.flatten().fieldErrors
+        throw new Error(fieldErrors.repeatedNewPassword?.[0] as string)
       }
+
       const response = await fetch(`${apiUrl}/user/new_password`, {
         method: "PUT",
         headers: {
@@ -44,7 +58,7 @@ export default function ChangePassword() {
         },
         body: JSON.stringify({
           oldPassword,
-          newPassword,
+          newPassword: passwordFormData.newPassword,
         }),
       })
 
@@ -65,8 +79,8 @@ export default function ChangePassword() {
       <CardContent className="space-y-3">
         <Label>Stare hasło: </Label>
         <Input
-          onInput={(e) => handleUpdateOldPassword(e.currentTarget.value)}
-          onChange={(e) => handleUpdateOldPassword(e.currentTarget.value)}
+          onInput={(e) => setOldPassword(e.currentTarget.value)}
+          onChange={(e) => setOldPassword(e.currentTarget.value)}
         />
         <Label>Nowe hasło: </Label>
         <Input
