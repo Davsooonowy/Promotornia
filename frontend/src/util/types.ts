@@ -4,12 +4,26 @@ interface NavigationItem {
   text: string
 }
 
+const passwordValidation = z.string().min(4, { message: "Hasło za krótkie" })
+
 const LoginFormDataSchema = z.object({
   email: z.string().email({ message: "Niepoprawny email" }),
-  password: z.string().min(4, { message: "Hasło za krótkie" }),
+  password: passwordValidation,
 })
 
+const PasswordFormDataSchema = z
+  .object({
+    newPassword: passwordValidation,
+    repeatedNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.repeatedNewPassword, {
+    message: "Hasła się nie zgadzają",
+    path: ["repeatedNewPassword"],
+  })
+
 type LoginFormData = z.infer<typeof LoginFormDataSchema>
+
+type PasswordFormData = z.infer<typeof PasswordFormDataSchema>
 
 interface JwtPayload {
   userId: number
@@ -46,5 +60,6 @@ export type {
   NewUser,
   FieldOfStudy,
   ServerMessageResponse,
+  PasswordFormData,
 }
-export { LoginFormDataSchema, NewUserScheme }
+export { LoginFormDataSchema, NewUserScheme, PasswordFormDataSchema }
