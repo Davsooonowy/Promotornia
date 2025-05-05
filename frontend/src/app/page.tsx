@@ -52,28 +52,6 @@ export default function Home() {
       }
       setFormErrors({})
 
-      // if (
-      //   (formData.email !== "dean@example.com" ||
-      //     formData.password !== "dean") &&
-      //   (formData.email !== "supervisor@example.com" ||
-      //     formData.password !== "supervisor") &&
-      //   (formData.email !== "student@example.com" ||
-      //     formData.password !== "student")
-      // ) {
-      //   setError("Nie znaleziono użytkownika")
-      //   return
-      // }
-      // let token
-      // if (formData.email === "dean@example.com")
-      //   token =
-      //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJkZWFuIn0.O5k7CaZmg82JkAB2fgNIJCy_MH-BWeKUiJGxF3y91RI"
-      // else if (formData.email === "supervisor@example.com")
-      //   token =
-      //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInJvbGUiOiJzdXBlcnZpc29yIn0.EkoIC4WPT0TTkG6Od-ikWAz170O0EkQl0diLsOA2V2Y"
-      // else
-      //   token =
-      //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvbGUiOiJzdHVkZW50In0.nMzbxVQdMTBoSTzxFwny53abtiIQeEQw2CE4rqug0vM"
-
       const response = await fetch(`${apiUrl}/user/login/`, {
         method: "POST",
         headers: {
