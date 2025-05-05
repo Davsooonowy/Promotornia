@@ -1,0 +1,7 @@
+Django>=4.2
+djangorestframework
+dj-rest-auth
+django-cors-headers
+djangorestframework-simplejwt
+django-allauth
+dotenv

@@ -1,15 +1,26 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { jwtDecode } from "jwt-decode"
-import { LoginFormData, JwtPayload, LoginFormDataSchema } from "@/util/types"
+import {
+  type LoginFormData,
+  type JwtPayload,
+  LoginFormDataSchema,
+} from "@/util/types"
 import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
-import apiUrl from "@/util/apiUrl"
+import { GraduationCap } from "lucide-react"
+import Link from "next/link"
 
 export default function Home() {
   const router = useRouter()
@@ -114,55 +125,71 @@ export default function Home() {
   return (
     <>
       {render && (
-        <div className="flex min-h-full w-full items-center justify-center">
-          <Card className="w-1/3">
-            <CardHeader>
-              <CardTitle>Logowanie</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex w-full space-x-3">
-                <Label htmlFor="email" className="py-1">
-                  Email:
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  onInput={(e) => updateEmail(e.currentTarget.value)}
-                  onChange={(e) => updateEmail(e.currentTarget.value)}
-                />
-              </div>
-              {formErrors?.email && (
-                <Label className="text-red-400">{formErrors.email}</Label>
-              )}
-              <div className="flex w-full space-x-3">
-                <Label htmlFor="password" className="py-1">
-                  Hasło:
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Password"
-                  onInput={(e) => updatePassword(e.currentTarget.value)}
-                  onChange={(e) => updatePassword(e.currentTarget.value)}
-                />
-              </div>
-              {formErrors?.password && (
-                <Label className="text-red-400">{formErrors.password}</Label>
-              )}
-              {error && <Label className="text-red-400">{error}</Label>}
-              <div className="flex w-full justify-between">
+        <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
+          <div className="w-full max-w-md px-4">
+            <Card className="border-none shadow-lg">
+              <CardHeader className="space-y-2 text-center">
+                <div className="bg-primary/10 mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+                  <GraduationCap className="text-primary h-6 w-6" />
+                </div>
+                <CardTitle className="text-2xl">Promotornia</CardTitle>
+                <CardDescription>
+                  System zarządzania pracami dyplomowymi
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@student.agh.edu.pl"
+                    value={formData.email}
+                    onChange={(e) => updateEmail(e.currentTarget.value)}
+                    className={formErrors?.email ? "border-red-500" : ""}
+                  />
+                  {formErrors?.email && (
+                    <p className="text-xs text-red-500">{formErrors.email}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Hasło</Label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-primary text-xs hover:underline"
+                    >
+                      Zapomniałem hasła
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => updatePassword(e.currentTarget.value)}
+                    className={formErrors?.password ? "border-red-500" : ""}
+                  />
+                  {formErrors?.password && (
+                    <p className="text-xs text-red-500">
+                      {formErrors.password}
+                    </p>
+                  )}
+                </div>
+                {error && (
+                  <p className="text-center text-sm text-red-500">{error}</p>
+                )}
                 <Button
                   type="button"
-                  className="cursor-pointer"
+                  className="w-full cursor-pointer"
                   onClick={() => loginMutation.mutate()}
+                  disabled={loginMutation.isPending}
                 >
-                  Zaloguj
+                  {loginMutation.isPending ? "Logowanie..." : "Zaloguj się"}
                 </Button>
-                <Label className="py-1">Forgot password?</Label>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
     </>
