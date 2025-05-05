@@ -47,7 +47,10 @@ export default function ChangePassword() {
 
       if (!validationResult.success) {
         const fieldErrors = validationResult.error.flatten().fieldErrors
-        throw new Error(fieldErrors.repeatedNewPassword?.[0] as string)
+        if (fieldErrors.newPassword?.[0])
+          throw new Error(fieldErrors.newPassword?.[0])
+        if (fieldErrors.repeatedNewPassword?.[0])
+          throw new Error(fieldErrors.repeatedNewPassword?.[0])
       }
 
       const response = await fetch(`${apiUrl}/user/new_password`, {

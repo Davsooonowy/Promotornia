@@ -4,14 +4,16 @@ interface NavigationItem {
   text: string
 }
 
+const passwordValidation = z.string().min(4, { message: "Hasło za krótkie" })
+
 const LoginFormDataSchema = z.object({
   email: z.string().email({ message: "Niepoprawny email" }),
-  password: z.string().min(4, { message: "Hasło za krótkie" }),
+  password: passwordValidation,
 })
 
 const PasswordFormDataSchema = z
   .object({
-    newPassword: z.string(),
+    newPassword: passwordValidation,
     repeatedNewPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.repeatedNewPassword, {
