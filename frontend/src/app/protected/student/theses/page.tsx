@@ -1,3 +1,13 @@
-export default function ThesisList() {
-  return <h1>Lista tematów</h1>
+"use client"
+import ThesesList from "@/components/features/theses/ThesesList"
+
+export default function ThesesListPage() {
+  return (
+    <ThesesList
+      basePath="/protected/student/theses"
+      supervisorsPath="/protected/student/supervisors"
+      canEdit={false}
+      canReserve={true}
+    />
+  )
 }
