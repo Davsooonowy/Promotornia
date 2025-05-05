@@ -30,12 +30,8 @@ export default function ManageUsers() {
   const [expirationDate, setExpirationDate] = useState<Date>(new Date())
   const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
 
-  // const [serverResponse, setServerResponse] =
-  //   useState<ServerMessageResponse | null>(null)
-
   const actionMutation = useMutation({
     mutationFn: async () => {
-      // Validation
       let validation_ok = true
       for (const newUser of newUsers) {
         const result = NewUserScheme.safeParse(newUser)
@@ -58,7 +54,7 @@ export default function ManageUsers() {
         }
       }
       if (!validation_ok) {
-        toast.error("Validation errors occurred. Action not performed.")
+        toast.error("Wystąpiły błędy. Nie wykonano akcji.")
         return
       }
 

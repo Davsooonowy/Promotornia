@@ -92,7 +92,6 @@ export default function Home() {
 
   useEffect(() => {
     if (tokenPayload) {
-      console.log(tokenPayload)
       switch (tokenPayload.role) {
         case "dean":
           router.push("/protected/dean/profile")

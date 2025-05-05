@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -6,11 +5,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from . import models
 import os
 import datetime
-import random
+import secrets
+import string
 
 ALLOWED_DOMAINS = os.getenv('ALLOWED_DOMAINS').split(",")
 USER_TYPES = os.getenv('USER_TYPES').split(",")
-PASSWORD_LENGTH = 10
+PASSWORD_LENGTH = int(os.getenv('PASSWORD_LENGTH'))
 
 def validate_email(email):
     try:
@@ -90,7 +90,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         users = []
         for user_data in validated_data["newUsers"]:
             user_type = "is_" + validated_data["userType"]
-            password = ''.join([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])
+            password = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH))
             user_dict = {
                 "email": user_data["email"],
                 "password": make_password(password),
