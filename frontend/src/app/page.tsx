@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { GraduationCap } from "lucide-react"
 import Link from "next/link"
+import apiUrl from "@/util/apiUrl";
 
 export default function Home() {
   const router = useRouter()
@@ -51,49 +52,41 @@ export default function Home() {
       }
       setFormErrors({})
 
-      if (
-        (formData.email !== "dean@example.com" ||
-          formData.password !== "dean") &&
-        (formData.email !== "supervisor@example.com" ||
-          formData.password !== "supervisor") &&
-        (formData.email !== "student@example.com" ||
-          formData.password !== "student")
-      ) {
-        setError("Nie znaleziono użytkownika")
+      const response = await fetch(`${apiUrl}/user/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.message)
         return
       }
-      let token
-      if (formData.email === "dean@example.com")
-        token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInJvbGUiOiJkZWFuIn0.O5k7CaZmg82JkAB2fgNIJCy_MH-BWeKUiJGxF3y91RI"
-      else if (formData.email === "supervisor@example.com")
-        token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsInJvbGUiOiJzdXBlcnZpc29yIn0.EkoIC4WPT0TTkG6Od-ikWAz170O0EkQl0diLsOA2V2Y"
-      else
-        token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvbGUiOiJzdHVkZW50In0.nMzbxVQdMTBoSTzxFwny53abtiIQeEQw2CE4rqug0vM"
-      // const response = await fetch(`${apiUrl}/user/login`, {
-      //   method: "POST",
-      //   body: JSON.stringify({
-      //     email: formData.email,
-      //     password: formData.password,
-      //   }),
-      // })
+      const token = data.access
+
       localStorage.setItem("token", token)
-      const decoded = jwtDecode<JwtPayload>(token)
-      if (decoded && decoded.role && decoded.userId) {
-        switch (decoded.role) {
-          case "dean":
-            router.push("/protected/dean/profile")
-            break
-          case "supervisor":
-            router.push("/protected/supervisor/profile")
-            break
-          case "student":
-            router.push("/protected/student/profile")
-            break
-        }
+      const tokenPayload = jwtDecode<JwtPayload>(token)
+
+      switch (tokenPayload.role) {
+        case "dean":
+          router.push("/protected/dean/profile")
+          break
+        case "supervisor":
+          router.push("/protected/supervisor/profile")
+          break
+        case "student":
+          router.push("/protected/student/profile")
+          break
+        default:
+          setError("Nieznana rola użytkownika")
       }
+      setRender(true)
     },
   })
 
@@ -109,6 +102,8 @@ export default function Home() {
         case "student":
           router.push("/protected/student/profile")
           break
+        default:
+          setError("Nieznana rola użytkownika")
       }
     }
     if (isTokenError) {
