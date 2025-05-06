@@ -30,6 +30,8 @@ class TagSerializer(serializers.ModelSerializer):
 
 class ThesisSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
+    owner = UserSerializer(read_only=True)
+    producers = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Thesis

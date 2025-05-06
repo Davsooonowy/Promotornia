@@ -21,7 +21,7 @@ class TagListView(APIView):
     def get(self, request):
 
         return Response(
-            serializers.TagSerializer(models.Tag.objects.all(), many=True).data,
+            {"tags": serializers.TagSerializer(models.Tag.objects.all(), many=True).data},
             status=status.HTTP_200_OK
         )
 
@@ -31,7 +31,7 @@ class MyTagView(APIView):
 
     def get(self, request):
         tags = request.user.tags
-        return Response(serializers.TagSerializer(tags, many=True).data, status=status.HTTP_200_OK)
+        return Response({"tags": serializers.TagSerializer(tags, many=True).data}, status=status.HTTP_200_OK)
 
     def put(self, request):
         user = request.user
@@ -97,7 +97,7 @@ class ThesisListView(APIView):
 
         resp = paginator.paginate_queryset(objects, request)
 
-        return Response(serializers.ThesisSerializer(resp, many=True).data, status=status.HTTP_200_OK)
+        return Response({"theses": serializers.ThesisSerializer(resp, many=True).data}, status=status.HTTP_200_OK)
 
 class SupervisorListView(APIView):
 
@@ -123,4 +123,4 @@ class SupervisorListView(APIView):
         paginator.page_size = ITEMS_PER_PAGE
         resp = paginator.paginate_queryset(objects, request)
 
-        return Response(serializers.UserSerializer(resp, many=True).data, status=status.HTTP_200_OK)
+        return Response({"supervisors": serializers.UserSerializer(resp, many=True).data}, status=status.HTTP_200_OK)
