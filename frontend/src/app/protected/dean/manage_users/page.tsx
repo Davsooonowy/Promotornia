@@ -10,6 +10,7 @@ import NewUserCard from "@/components/features/manage_users/NewUserCard"
 import ActionDialog from "@/components/features/manage_users/ActionDialog"
 import apiUrl from "@/util/apiUrl"
 import { toast } from "sonner"
+import useDecodeToken from "@/hooks/useDecodeToken"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -29,6 +30,8 @@ export default function ManageUsers() {
   const [action, setAction] = useState<string | null>(null) // possible values: addUsers, deleteUsers, sendEmail
   const [expirationDate, setExpirationDate] = useState<Date>(new Date())
   const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
+
+  const { token } = useDecodeToken()
 
   // const [serverResponse, setServerResponse] =
   //   useState<ServerMessageResponse | null>(null)
@@ -68,7 +71,7 @@ export default function ManageUsers() {
           response = await fetch(`${apiUrl}/dean/new_users`, {
             method: "POST",
             headers: {
-              Authorization: "Bearer TUTAJ_TOKEN",
+              Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -92,7 +95,7 @@ export default function ManageUsers() {
           response = await fetch(`${apiUrl}/dean/users`, {
             method: "DELETE",
             headers: {
-              Authorization: "Bearer TUTAJ_TOKEN",
+              Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
