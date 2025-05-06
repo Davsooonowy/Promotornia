@@ -22,6 +22,9 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, first_name, last_name, **extra_fields)
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
 class FieldOfStudy(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField()
@@ -40,6 +43,8 @@ class SystemUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+
+    tags = models.ManyToManyField(Tag)
 
     USERNAME_FIELD = 'email'
     objects = UserManager()

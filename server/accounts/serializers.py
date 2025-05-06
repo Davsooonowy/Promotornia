@@ -1,6 +1,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
 from . import models
 import os
 import datetime
@@ -78,6 +79,8 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         if not models.FieldOfStudy.objects.filter(id=field_id, name=field_name).exists():
             raise serializers.ValidationError(f"Kierunek {field_name} nie istnieje w bazie danych!")
 
+        field_of_study = models.FieldOfStudy.objects.get(id=field_id)
+        data['field_of_study'] = field_of_study
         exp_date = data.get('expirationDate')
         if datetime.date.today() > exp_date:
             raise serializers.ValidationError(f"Należy podać datę ważności późniejszą niż dzień dzisiejszy")
@@ -94,7 +97,11 @@ class DeanCreateUsersSerializer(serializers.Serializer):
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
-        add_result = models.SystemUser.objects.bulk_create(users)
+        with transaction.atomic():
+            add_result = models.SystemUser.objects.bulk_create(users)
+            for user in add_result:
+                user.field_of_study.add(validated_data["fieldOfStudy"]["id"])
+
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
