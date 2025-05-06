@@ -84,11 +84,13 @@ export default function ChangePassword() {
         <Input
           onInput={(e) => setOldPassword(e.currentTarget.value)}
           onChange={(e) => setOldPassword(e.currentTarget.value)}
+          type="password"
         />
         <Label>Nowe hasło: </Label>
         <Input
           onInput={(e) => handleUpdateNewPassword(e.currentTarget.value)}
           onChange={(e) => handleUpdateNewPassword(e.currentTarget.value)}
+          type="password"
         />
         <Label>Powtórz nowe hasło: </Label>
         <Input
@@ -98,6 +100,7 @@ export default function ChangePassword() {
           onChange={(e) =>
             handleUpdateRepeatedNewPassword(e.currentTarget.value)
           }
+          type="password"
         />
         {error && <Label className="text-red-500">{error}</Label>}
         {isSuccess && <Label className="text-green-500">Hasło zmienione</Label>}
