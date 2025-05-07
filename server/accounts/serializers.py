@@ -82,7 +82,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
 
         exp_date = data.get('expirationDate')
         if datetime.date.today() > exp_date:
-            raise serializers.ValidationError(f"Należy podać datę ważności późniejszą niż dzień dzisiejszy")
+            raise serializers.ValidationError("Należy podać datę ważności późniejszą niż dzień dzisiejszy")
 
         return data
 

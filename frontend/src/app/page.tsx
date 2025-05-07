@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { GraduationCap } from "lucide-react"
 import Link from "next/link"
-import apiUrl from "@/util/apiUrl";
+import apiUrl from "@/util/apiUrl"
 
 export default function Home() {
   const router = useRouter()
