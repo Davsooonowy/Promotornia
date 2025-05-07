@@ -70,7 +70,9 @@ export default function ManageUsers() {
             action === "addUsers"
               ? {
                   userType,
-                  newUsers: newUsers.map((newUser) => ({ email: newUser.email })),
+                  newUsers: newUsers.map((newUser) => ({
+                    email: newUser.email,
+                  })),
                   expirationDate: expirationDate.toISOString().split("T")[0],
                   fieldOfStudy,
                 }
@@ -99,7 +101,7 @@ export default function ManageUsers() {
             description: errorData.detail || "Wystąpił nieznany błąd.",
           })
         }
-      } catch (error) {
+      } catch {
         toast.error("Wystąił nieznany błąd.")
       }
     },
