@@ -25,9 +25,13 @@ class UserManager(BaseUserManager):
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+class Faculty(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
 class FieldOfStudy(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField()
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE)
 
 class SystemUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
@@ -45,6 +49,11 @@ class SystemUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
 
     tags = models.ManyToManyField(Tag)
+    title = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+    )
 
     USERNAME_FIELD = 'email'
     objects = UserManager()

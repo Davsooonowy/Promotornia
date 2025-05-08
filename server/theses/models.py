@@ -1,6 +1,7 @@
 from django.db import models
 
 from accounts.models import SystemUser, Tag
+from django.utils import timezone
 
 class Thesis(models.Model):
     name = models.CharField(max_length=255)
@@ -18,3 +19,4 @@ class Thesis(models.Model):
     )
     producer_limit = models.PositiveIntegerField(default=1)
     tags = models.ManyToManyField(Tag)
+    date_of_creation = models.DateTimeField(default=timezone.now)

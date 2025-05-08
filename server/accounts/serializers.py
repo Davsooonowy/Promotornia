@@ -143,3 +143,49 @@ class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         return data
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name')
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = '__all__'
+
+    def validate(self, attrs):
+        tag_name = attrs.get('name')
+        return attrs
+
+    def create(self, validated_data):
+        tag = models.Tag.objects.create(**validated_data)
+        return tag
+
+
+def validate_tags(tag_ids):
+    valid_tags = models.Tag.objects.filter(id__in=tag_ids)
+    if valid_tags.count() < len(tag_ids):
+        invalid_tags = set(tag_ids).difference(map(lambda t: t.id, valid_tags))
+        if len(invalid_tags) == 1:
+            message = f"Tag {invalid_tags.pop()} nie istnieje w bazie danych"
+        else:
+            message = f"Tagi {', '.join(invalid_tags)} nie istnieją w bazie"
+        raise serializers.ValidationError(message)
+
+    return valid_tags
+
+class UpdateTagsSerializer(serializers.Serializer):
+    tags = serializers.ListField(default=[])
+
+    def validate(self, attrs):
+        tag_ids = attrs.get('tags')
+        valid_tags = validate_tags(tag_ids)
+        attrs['tags'] = valid_tags
+        return attrs
+
+    def update(self, instance, validated_data):
+        tags = validated_data.get('tags')
+        instance.tags.set(tags)
+        instance.save()
+        return instance

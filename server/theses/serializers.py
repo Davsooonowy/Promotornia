@@ -1,56 +1,30 @@
 
 from rest_framework import serializers
 from . import models
-from accounts.models import FieldOfStudy
+from accounts  import models as account_models
+from accounts import serializers as account_serializers
+import os
 
-MAX_PRODUCERS = 2
+from django.db.models.functions import Concat
+from django.db.models import Value, F
 
-def validate_tags(tag_ids):
-    valid_tags = models.Tag.objects.filter(id__in=tag_ids)
-    if valid_tags.count() < len(tag_ids):
-        invalid_tags = set(tag_ids).difference(map(lambda t: t.id, valid_tags))
-        if len(invalid_tags) == 1:
-            message = f"Tag {invalid_tags.pop()} nie istnieje w bazie danych"
-        else:
-            message = f"Tagi {', '.join(invalid_tags)} nie istnieją w bazie"
-        raise serializers.ValidationError(message)
+MAX_PRODUCERS = int(os.getenv('MAX_PRODUCER_COUNT'))
+ALLOWED_THESIS_ORDERS = os.getenv('ALLOWED_THESIS_ORDERS').split(',')
 
-    return valid_tags
-
-# TODO: move to accounts after merge
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.SystemUser
-        fields = ('id', 'email', 'first_name', 'last_name')
-
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Tag
-        fields = '__all__'
+ORDER_MAPPING = {
+    'title': F('name'),
+    'supervisor': Concat(F('owner__first_name'), Value(' '), F('owner__last_name')),
+    'date': F('date_of_creation'),
+}
 
 class ThesisSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(many=True, read_only=True)
-    owner = UserSerializer(read_only=True)
-    producers = UserSerializer(many=True, read_only=True)
+    tags = account_serializers.TagSerializer(many=True, read_only=True)
+    owner = account_serializers.UserSerializer(read_only=True)
+    producers = account_serializers.UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Thesis
         fields = '__all__'
-
-class UpdateTagsSerializer(serializers.Serializer):
-    tags = serializers.ListField(default=[])
-
-    def validate(self, attrs):
-        tag_ids = attrs.get('tags')
-        valid_tags = validate_tags(tag_ids)
-        attrs['tags'] = valid_tags
-        return attrs
-
-    def update(self, instance, validated_data):
-        tags = validated_data.get('tags')
-        instance.tags.set(tags)
-        instance.save()
-        return instance
 
 class CreateThesisSerializer(serializers.Serializer):
 
@@ -80,7 +54,7 @@ class CreateThesisSerializer(serializers.Serializer):
             raise serializers.ValidationError(message)
 
         tag_ids = attrs.get('tags')
-        valid_tags = validate_tags(tag_ids)
+        valid_tags = account_serializers.validate_tags(tag_ids)
 
         attrs['tags'] = valid_tags
         attrs['producers'] = producers
@@ -97,24 +71,20 @@ class CreateThesisSerializer(serializers.Serializer):
         return thesis
 
 class ListThesesSerializer(serializers.Serializer):
-    ownerEmail = serializers.EmailField(default=None)
     fieldOfStudy = serializers.IntegerField(default=None)
     tags = serializers.CharField(default=None)
+    order = serializers.CharField(default=None)
+    ascending = serializers.BooleanField(default=True)
+    available = serializers.BooleanField(required=False, allow_null=True)
+    search = serializers.CharField(default=None)
 
     def validate(self, attrs):
         tags = attrs.get('tags')
-        owner_email = attrs.get('ownerEmail')
         field_of_study = attrs.get('fieldOfStudy')
 
         if (
-            owner_email is not None and
-            not models.SystemUser.objects.filter(email=owner_email, is_supervisor=True).exists()
-        ):
-            raise serializers.ValidationError(f"Nie istnieje promotor o adresie email {owner_email}")
-
-        if (
             field_of_study is not None and
-            not FieldOfStudy.objects.filter(id=field_of_study).exists()
+            not account_models.FieldOfStudy.objects.filter(id=field_of_study).exists()
         ):
             raise serializers.ValidationError(f"Nie istnieje kierunek studiów o identyfikatorze {field_of_study}")
 
@@ -123,8 +93,17 @@ class ListThesesSerializer(serializers.Serializer):
                 tag_ids = list(map(int, tags.split(',')))
             except ValueError:
                 raise serializers.ValidationError("Niepoprawny format identyfikatorów tagów")
-            valid_tags = validate_tags(tag_ids)
+            valid_tags = account_serializers.validate_tags(tag_ids)
             attrs['tags'] = valid_tags
+
+        order = attrs.get('order')
+        if order is not None:
+            if order.lower() not in ALLOWED_THESIS_ORDERS:
+                raise serializers.ValidationError(f"Nie można uporządkować prac dyplomowych po polu \"{order}\". Można po {', '.join(ALLOWED_THESIS_ORDERS)}")
+
+            direction = '' if attrs.get('ascending') else '-'
+            attrs['direction'] = direction
+            attrs['order'] = ORDER_MAPPING[order]
 
         return attrs
 
@@ -139,7 +118,7 @@ class ListSupervisorsSerializer(serializers.Serializer):
 
         if (
             field_of_study is not None and
-            not FieldOfStudy.objects.filter(id=field_of_study).exists()
+            not account_models.FieldOfStudy.objects.filter(id=field_of_study).exists()
         ):
             raise serializers.ValidationError(f"Nie istnieje kierunek studiów {field_of_study}")
 
@@ -148,7 +127,7 @@ class ListSupervisorsSerializer(serializers.Serializer):
                 tag_ids = list(map(int, tags.split(',')))
             except ValueError:
                 raise serializers.ValidationError("Niepoprawny format identyfikatorów tagów")
-            valid_tags = validate_tags(tag_ids)
+            valid_tags = account_serializers.validate_tags(tag_ids)
             attrs['tags'] = valid_tags
 
         return attrs
