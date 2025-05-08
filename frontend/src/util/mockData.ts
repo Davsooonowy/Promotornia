@@ -120,7 +120,8 @@ export const mockTheses: Thesis[] = [
   },
   {
     id: 2,
-    title: "Implementacja i analiza wydajności algorytmów kryptograficznych w systemach IoT",
+    title:
+      "Implementacja i analiza wydajności algorytmów kryptograficznych w systemach IoT",
     promoter: "prof. dr hab. Jan Nowak",
     promoterId: 2,
     department: "Katedra Informatyki/Cyberbezpieczeństwo",
@@ -132,7 +133,8 @@ export const mockTheses: Thesis[] = [
   },
   {
     id: 3,
-    title: "Projektowanie responsywnych interfejsów użytkownika z wykorzystaniem React i TailwindCSS",
+    title:
+      "Projektowanie responsywnych interfejsów użytkownika z wykorzystaniem React i TailwindCSS",
     promoter: "dr Tomasz Wiśniewski",
     promoterId: 3,
     department: "Katedra Informatyki/Cyberbezpieczeństwo",
@@ -168,7 +170,8 @@ export const mockTheses: Thesis[] = [
   },
   {
     id: 6,
-    title: "Metody detekcji anomalii w sieciach komputerowych z wykorzystaniem uczenia maszynowego",
+    title:
+      "Metody detekcji anomalii w sieciach komputerowych z wykorzystaniem uczenia maszynowego",
     promoter: "dr inż. Magdalena Nowakowska",
     promoterId: 6,
     department: "Katedra Informatyki/Cyberbezpieczeństwo",
@@ -180,7 +183,8 @@ export const mockTheses: Thesis[] = [
   },
   {
     id: 7,
-    title: "Optymalizacja wydajności aplikacji webowych z wykorzystaniem technik Progressive Web App",
+    title:
+      "Optymalizacja wydajności aplikacji webowych z wykorzystaniem technik Progressive Web App",
     promoter: "dr hab. Krzysztof Adamski",
     promoterId: 7,
     department: "Katedra Informatyki/Cyberbezpieczeństwo",
@@ -192,7 +196,8 @@ export const mockTheses: Thesis[] = [
   },
   {
     id: 8,
-    title: "Projektowanie i implementacja systemów rozpoznawania mowy dla języka polskiego",
+    title:
+      "Projektowanie i implementacja systemów rozpoznawania mowy dla języka polskiego",
     promoter: "dr Joanna Kamińska",
     promoterId: 8,
     department: "Katedra Informatyki/Cyberbezpieczeństwo",
@@ -205,7 +210,9 @@ export const mockTheses: Thesis[] = [
 ]
 
 export const getTagsFromSupervisors = (supervisors: Supervisor[]): string[] => {
-  return Array.from(new Set(supervisors.flatMap((supervisor) => supervisor.tags)))
+  return Array.from(
+    new Set(supervisors.flatMap((supervisor) => supervisor.tags)),
+  )
 }
 
 export const getTagsFromTheses = (theses: Thesis[]): string[] => {
