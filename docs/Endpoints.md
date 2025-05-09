@@ -177,7 +177,7 @@ headers: {
 |--------|--------|----------|----------------------------|
 | email     | string    | Tak      | Obecny e-mail usera   |
 
-# Endpoint GET /thesis/list?page=\<page\>&fieldOfStudy=\<fieldID\>&owner=\<ownerID\>
+# Endpoint GET /thesis/list?page&fieldOfStudy&tags&available&order&ascending&search
 
 **Opis:**
 Zwróć listę dostępnych prac dyplomowych
@@ -190,16 +190,32 @@ headers: {
 | Nazwa  | Typ    | Wymagany | Opis                       | Default |
 |--------|--------|----------|----------------------------|---------|
 | page | number | Nie | Numer strony | 1 |
-| fieldID | number | Nie | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None` | `None` |
-| ownerID | number | Nie | ID promotora, tak jak wyżej | `None` |
+| fieldOfStudy | number | Nie | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None` | `None` |
+| tags | List[number] | Nie | Lista tagów do filtracji. Podawane w formacie `tags=1,2,3` | `None` |
+| available | boolean | Nie | Flaga czy dany temat pracy jest zajęty czy nie | `None` |
+| order | string | Nie | Wartość po której powinny być porządkowane dane. Na ten moment jedyne dozwolone to `name`, `supervisor`, `date` | `None` |
+| ascending | boolean | Nie | Kolejność porządku | `True` |
+| search | string | Nie | Fraza do wyszukania (szuka po promotorach i nazwach tematów) | `None` |
 
 ## Odpowiedź
-User = {id: number, email: string, first_name: string, last_name: string}
+`User = {id: number, email: string, first_name: string, last_name: string}`
+
+`FieldOfStudy = {id: number, name: string, faculty: {id: number, name: string}}`
+
+**Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
 | Nazwa  | Typ    | Wymagany | Opis                       |
 |--------|--------|----------|----------------------------|
-| theses     | List[{id: number, name: string, description: string, producer_limit: number, owner: User, producers: List[User], tags: List[{id: number, name: string}]}]    | Tak      | Lista prac dyplomowych   |
+| id | number | | Identyfikator pracy |
+| name | string | | Nazwa pracy |
+| producer_limit | number | | Limit osób realizujących pracę |
+| free_spots | number | | Liczba wolnych miejsc |
+| owner | User | | Opiekun pracy |
+| field_of_study | FieldOfStudy | | Kierunek studiów (wraz z wydziałem) gdzie realizowana jest praca |
+| date_of_creation | DateTime | | Data utworzenia |
+| tags | List[{id: number, name: string}] | | Lista tagów |
 
-# Endpoint GET /supervisors/list?page=\<page\>&fieldOfStudy=\<fieldID\>
+
+# Endpoint GET /supervisors/list?page&fieldOfStudy&available&order&ascending&search
 
 **Opis:**
 Zwróć listę promotorów
@@ -209,17 +225,28 @@ headers: {
 }
 
 ## Parametry
-| Nazwa  | Typ    | Wymagany | Opis                       | Default |
-|--------|--------|----------|----------------------------|---------|
-| page | number | Nie | Numer strony | 1 |
-| fieldID | number | Nie | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None` | `None` |
+Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po imieniu i nazwisku promotora, `order` może być jednym z `[free_spots, last_name]`
 
 ## Odpowiedź
+
+`FieldOfStudy = {id: number, name: string, faculty: {id: number, name: string}}`
+
+**Odpowiedzią jest {supervisors: List[Supervisor]}. Struktura `Supervisor` poniżej**
+
+
 | Nazwa  | Typ    | Wymagany | Opis                       |
 |--------|--------|----------|----------------------------|
-| supervisors | List[{id: number, email: string, first_name: string, last_name: string}] | Tak | Lista promotorów |
+| id | number | | ID promotora |
+| email | string | | |
+| first_name | string | | |
+| last_name | string | | |
+| field_of_study | FieldOfStudy | | Kierunek + wydział |
+| free_spots | number | | Liczba wolnych miejsc |
+| total_spots | number | | Liczba wolnych + zajętych miejsc |
+| tags | List[{id: number, name: string}] | | Lista tagów promotora |
 
-# Endpoint GET /thesis/\<int:thesisID\>
+
+# Endpoint GET /thesis/:thesisID
 
 **Opis:**
 Uzyskuje informacje o danej pracy dyplomowej
@@ -234,18 +261,24 @@ headers: {
 | thesisID | number | Tak | ID pracy dyplomowej |
 
 ## Odpowiedź
-User = {id: number, email: string, first_name: string, last_name: string}
+`User = {id: number, email: string, first_name: string, last_name: string}`
+
+`FieldOfStudy = {id: number, name: string, faculty: {id: number, name: string}}`
+
 | Nazwa  | Typ    | Wymagany | Opis                       |
 |--------|--------|----------|----------------------------|
 | id | number | Tak | Identyfikator |
 | name | string | Tak | Nazwa pracy dyplomowej |
 | description | string | Tak | Opis pracy dyplomowej |
 | producer_limit | number | Tak | Maksymalna liczba studentów realizujących pracę |
+| free_spots | number | Tak | Liczba wolnych miejsc |
+| date_of_creation | DateTime | Tak | Data stworzenia |
 | owner | User | Tak | Promotor odpowiedzialny za daną pracę |
+| field_of_study | FieldOfStudy | Tak | Kierunek, gdzie praca jest realizowana |
 | producers | List[User] | Tak | Studenci realizujący pracę |
 | tags | List[{id: number, name: string}] | Tak | Lista tagów |
 
-# Endpoint DELETE /thesis/\<id:thesisID\>
+# Endpoint DELETE /thesis/:thesisID
 
 **Opis:**
 Usuwa pracę dyplomową z systemu
@@ -259,7 +292,7 @@ headers: {
 |--------|--------|----------|----------------------------|
 | thesisID | number | Tak | ID pracy dyplomowej |
 
-# Endpoint POST /thesis/
+# Endpoint POST /thesis
 
 **Opis:**
 Tworzy nową pracę dyplomową
@@ -269,6 +302,25 @@ Tworzy nową pracę dyplomową
 |--------|--------|----------|----------------------------|---------|
 | name | string | Tak | Nazwa pracy dyplomowej | - |
 | description | string | Tak | Opis pracy dyplomowej | - |
+| field_of_study | number | Tak | ID kierunku studiów |
 | producer_limit | number | Nie | Maksymalna liczba studentów realizujących pracę (max 2 na razie) | 1 |
 | producers | List[{email: string}] | Nie | Studenci realizujący pracę | [] |
 | tags | List[number] | Nie | Lista tagów | [] |
+
+## Odpowiedź
+To co w GET /thesis/:thesisID
+
+# Endpoint POST /supervisor/tags
+
+**Opis:**
+Dodaje nowy tag
+
+headers: {
+  Content-Type: "application/json"
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Ciało
+| Nazwa  | Typ    | Wymagany | Opis                       | Default |
+|--------|--------|----------|----------------------------|---------|
+| name | string | tak | Nazwa tagu | - |
