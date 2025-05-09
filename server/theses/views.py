@@ -36,6 +36,8 @@ class ThesisView(APIView):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
             thesis = thesis[0]
+            if thesis.owner != request.user:
+                return Response(status=status.HTTP_403_FORBIDDEN)
             thesis.free_spots = thesis.producer_limit - thesis.producers.count()
             return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
