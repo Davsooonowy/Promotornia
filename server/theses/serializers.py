@@ -10,6 +10,7 @@ from django.db.models import Value, F
 
 MAX_PRODUCERS = int(os.getenv('MAX_PRODUCER_COUNT'))
 ALLOWED_THESIS_ORDERS = os.getenv('ALLOWED_THESIS_ORDERS').split(',')
+ALLOWED_SUPERVISOR_ORDERS = os.getenv('ALLOWED_SUPERVISOR_ORDERS').split(',')
 
 ORDER_MAPPING = {
     'title': F('name'),
@@ -110,11 +111,15 @@ class ListThesesSerializer(serializers.Serializer):
 class ListSupervisorsSerializer(serializers.Serializer):
     fieldOfStudy = serializers.IntegerField(default=None)
     tags = serializers.CharField(default=None)
+    available = serializers.BooleanField(required=False, allow_null=True)
+    search = serializers.CharField(default=None)
+    order = serializers.CharField(default=None)
+    ascending = serializers.BooleanField(default=True)
 
     def validate(self, attrs):
         field_of_study = attrs.get('fieldOfStudy')
         tags = attrs.get('tags')
-        print(type(field_of_study))
+        available = attrs.get('available')
 
         if (
             field_of_study is not None and

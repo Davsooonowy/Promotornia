@@ -144,23 +144,42 @@ class LoginSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         return data
 
-class UserSerializer(serializers.ModelSerializer):
+class FacultySerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.SystemUser
-        fields = ('id', 'email', 'first_name', 'last_name')
+        model = models.Faculty
+        fields = '__all__'
+
+class FieldOfStudySerializer(serializers.ModelSerializer):
+    faculty = FacultySerializer(read_only=True)
+
+    class Meta:
+        model = models.FieldOfStudy
+        fields = '__all__'
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Tag
         fields = '__all__'
 
-    def validate(self, attrs):
-        tag_name = attrs.get('name')
-        return attrs
-
     def create(self, validated_data):
         tag = models.Tag.objects.create(**validated_data)
         return tag
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name')
+
+class SupervisorSerializer(serializers.ModelSerializer):
+    free_spots = serializers.IntegerField(default=0)
+    total_spots = serializers.IntegerField(default=0)
+    tags = TagSerializer(many=True, read_only=True)
+    field_of_study = FieldOfStudySerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name', 'field_of_study',
+                  'free_spots', 'total_spots', 'tags')
 
 
 def validate_tags(tag_ids):

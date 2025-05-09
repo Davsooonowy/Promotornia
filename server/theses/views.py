@@ -8,10 +8,11 @@ from rest_framework.pagination import PageNumberPagination
 from . import serializers
 from . import models
 
-from django.db.models import Count, F, Value, Q
-from django.db.models.functions import Concat
+from django.db.models import Count, F, Value, Q, Sum, ExpressionWrapper, IntegerField
+from django.db.models.functions import Concat, Coalesce
 
-from accounts import permissions
+from accounts import permissions as account_permissions
+from accounts import serializers as account_serializers
 import os
 
 
@@ -19,7 +20,7 @@ ITEMS_PER_PAGE = os.getenv('ITEMS_PER_PAGE')
 
 class ThesisView(APIView):
 
-    permission_classes = [permissions.IsSupervisor]
+    permission_classes = [account_permissions.IsSupervisor]
 
     def post(self, request):
         serializer = serializers.CreateThesisSerializer(data=request.data, context={"user": request.user})
@@ -94,17 +95,38 @@ class SupervisorListView(APIView):
 
         field_of_study = serializer.validated_data.get('fieldOfStudy')
         tags = serializer.validated_data.get('tags')
+        search = serializer.validated_data.get('search')
+        order = serializer.validated_data.get('order')
+        ascending = serializer.validated_data.get('ascending')
 
         objects = models.SystemUser.objects.filter(is_supervisor=True)
 
-        print(field_of_study)
+        objects = objects.annotate(
+            total_spots=Coalesce(Sum('owned_theses__producer_limit'), 0),
+            taken_spots=Count('owned_theses__producers'),
+            free_spots = ExpressionWrapper(
+                F('total_spots') - F('taken_spots'),
+                output_field=IntegerField()
+            ),
+            full_name=Concat(F('first_name'), Value(' '), F('last_name'))
+        )
+
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
         if tags is not None:
             objects = objects.filter(tags__in=tags)
+        if search is not None:
+            objects = objects.filter(full_name__icontains=search)
+        if order is not None:
+            desc = '' if ascending else '-'
+            match order:
+                case 'last_name':
+                    objects = objects.order_by(f'{desc}last_name')
+                case 'free_spots':
+                    objects = objects.order_by(f'{desc}free_spots')
 
         paginator = PageNumberPagination()
         paginator.page_size = ITEMS_PER_PAGE
         resp = paginator.paginate_queryset(objects, request)
 
-        return Response({"supervisors": serializers.UserSerializer(resp, many=True).data}, status=status.HTTP_200_OK)
+        return Response({"supervisors": account_serializers.SupervisorSerializer(resp, many=True).data}, status=status.HTTP_200_OK)
