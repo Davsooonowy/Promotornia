@@ -12,16 +12,13 @@ MAX_PRODUCERS = int(os.getenv('MAX_PRODUCER_COUNT'))
 ALLOWED_THESIS_ORDERS = os.getenv('ALLOWED_THESIS_ORDERS').split(',')
 ALLOWED_SUPERVISOR_ORDERS = os.getenv('ALLOWED_SUPERVISOR_ORDERS').split(',')
 
-ORDER_MAPPING = {
-    'title': F('name'),
-    'supervisor': Concat(F('owner__first_name'), Value(' '), F('owner__last_name')),
-    'date': F('date_of_creation'),
-}
-
 class ThesisSerializer(serializers.ModelSerializer):
     tags = account_serializers.TagSerializer(many=True, read_only=True)
     owner = account_serializers.UserSerializer(read_only=True)
     producers = account_serializers.UserSerializer(many=True, read_only=True)
+    field_of_study = account_serializers.FieldOfStudySerializer(read_only=True)
+
+    free_spots = serializers.IntegerField()
 
     class Meta:
         model = models.Thesis
@@ -34,9 +31,10 @@ class CreateThesisSerializer(serializers.Serializer):
     tags = serializers.ListField(default=[])
     producers = serializers.ListField(default=[])
     producer_limit = serializers.IntegerField(default=1)
+    field_of_study = serializers.IntegerField()
 
     def validate(self, attrs):
-        producer_limit = attrs.get('producer_limit', 1)
+        producer_limit = attrs.get('producerLimit', 1)
         if producer_limit <= 0:
             raise serializers.ValidationError("Nieprawidłowa wartość limitu twórców")
         if producer_limit > MAX_PRODUCERS:
@@ -45,7 +43,7 @@ class CreateThesisSerializer(serializers.Serializer):
         if len(producer_emails) > producer_limit:
             raise serializers.ValidationError(f"Przekroczono limit uczestników pracy")
 
-        producers = models.SystemUser.objects.filter(email__in=producer_emails)
+        producers = account_models.SystemUser.objects.filter(email__in=producer_emails)
         invalid_emails = set(producer_emails).difference(set(map(lambda u: u.email, producers)))
         if len(invalid_emails) > 0:
             if len(invalid_emails) == 1:
@@ -53,6 +51,13 @@ class CreateThesisSerializer(serializers.Serializer):
             else:
                 message = f"Adresy {', '.join(invalid_emails)} nie istnieją w bazie danych"
             raise serializers.ValidationError(message)
+
+        user: account_models.SystemUser = self.context['user']
+        field_of_study_id = attrs.get('field_of_study')
+        if not user.field_of_study.filter(id=field_of_study_id).exists():
+            raise serializers.ValidationError(f"ID kierunku {field_of_study_id} nie jest przypisane do Ciebie")
+        field_of_study = account_models.FieldOfStudy.objects.get(id=field_of_study_id)
+        attrs['field_of_study'] = field_of_study
 
         tag_ids = attrs.get('tags')
         valid_tags = account_serializers.validate_tags(tag_ids)
@@ -68,6 +73,8 @@ class CreateThesisSerializer(serializers.Serializer):
         thesis = models.Thesis.objects.create(**validated_data)
         thesis.tags.add(*tags)
         thesis.producers.add(*producers)
+
+        thesis.free_spots = validated_data.get('producer_limit') - producers.count()
 
         return thesis
 
@@ -104,7 +111,6 @@ class ListThesesSerializer(serializers.Serializer):
 
             direction = '' if attrs.get('ascending') else '-'
             attrs['direction'] = direction
-            attrs['order'] = ORDER_MAPPING[order]
 
         return attrs
 
@@ -119,7 +125,7 @@ class ListSupervisorsSerializer(serializers.Serializer):
     def validate(self, attrs):
         field_of_study = attrs.get('fieldOfStudy')
         tags = attrs.get('tags')
-        available = attrs.get('available')
+        order = attrs.get('order')
 
         if (
             field_of_study is not None and
@@ -134,5 +140,9 @@ class ListSupervisorsSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Niepoprawny format identyfikatorów tagów")
             valid_tags = account_serializers.validate_tags(tag_ids)
             attrs['tags'] = valid_tags
+
+        print(ALLOWED_SUPERVISOR_ORDERS)
+        if order is not None and order.lower() not in ALLOWED_SUPERVISOR_ORDERS:
+            raise serializers.ValidationError(f"Nie można uporządkować danych po {order}")
 
         return attrs
