@@ -1,5 +1,7 @@
+
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from . import models
@@ -80,6 +82,8 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         if not models.FieldOfStudy.objects.filter(id=field_id, name=field_name).exists():
             raise serializers.ValidationError(f"Kierunek {field_name} nie istnieje w bazie danych!")
 
+        field_of_study = models.FieldOfStudy.objects.get(id=field_id)
+        data['field_of_study'] = field_of_study
         exp_date = data.get('expirationDate')
         if datetime.date.today() > exp_date:
             raise serializers.ValidationError("Należy podać datę ważności późniejszą niż dzień dzisiejszy")
@@ -97,7 +101,11 @@ class DeanCreateUsersSerializer(serializers.Serializer):
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
-        add_result = models.SystemUser.objects.bulk_create(users)
+        with transaction.atomic():
+            add_result = models.SystemUser.objects.bulk_create(users)
+            for user in add_result:
+                user.field_of_study.add(validated_data["fieldOfStudy"]["id"])
+
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
@@ -135,3 +143,68 @@ class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         return data
+
+class FacultySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Faculty
+        fields = '__all__'
+
+class FieldOfStudySerializer(serializers.ModelSerializer):
+    faculty = FacultySerializer(read_only=True)
+
+    class Meta:
+        model = models.FieldOfStudy
+        fields = '__all__'
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = '__all__'
+
+    def create(self, validated_data):
+        tag = models.Tag.objects.create(**validated_data)
+        return tag
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name')
+
+class SupervisorSerializer(serializers.ModelSerializer):
+    free_spots = serializers.IntegerField(default=0)
+    total_spots = serializers.IntegerField(default=0)
+    tags = TagSerializer(many=True, read_only=True)
+    field_of_study = FieldOfStudySerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name', 'field_of_study',
+                  'free_spots', 'total_spots', 'tags')
+
+
+def validate_tags(tag_ids):
+    valid_tags = models.Tag.objects.filter(id__in=tag_ids)
+    if valid_tags.count() < len(tag_ids):
+        invalid_tags = set(tag_ids).difference(map(lambda t: t.id, valid_tags))
+        if len(invalid_tags) == 1:
+            message = f"Tag {invalid_tags.pop()} nie istnieje w bazie danych"
+        else:
+            message = f"Tagi {', '.join(invalid_tags)} nie istnieją w bazie"
+        raise serializers.ValidationError(message)
+
+    return valid_tags
+
+class UpdateTagsSerializer(serializers.Serializer):
+    tags = serializers.ListField(default=[])
+
+    def validate(self, attrs):
+        tag_ids = attrs.get('tags')
+        valid_tags = validate_tags(tag_ids)
+        attrs['tags'] = valid_tags
+        return attrs
+
+    def update(self, instance, validated_data):
+        tags = validated_data.get('tags')
+        instance.tags.set(tags)
+        instance.save()
+        return instance
