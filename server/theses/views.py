@@ -8,7 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from . import serializers
 from . import models
 
-from django.db.models import Count, F, Value, Q, Sum, ExpressionWrapper, IntegerField, BooleanField
+from django.db.models import Count, F, Value, Q, Sum, ExpressionWrapper, IntegerField
 from django.db.models.functions import Concat, Coalesce
 
 from accounts import permissions as account_permissions

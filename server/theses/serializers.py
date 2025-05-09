@@ -5,9 +5,6 @@ from accounts  import models as account_models
 from accounts import serializers as account_serializers
 import os
 
-from django.db.models.functions import Concat
-from django.db.models import Value, F
-
 MAX_PRODUCERS = int(os.getenv('MAX_PRODUCER_COUNT'))
 ALLOWED_THESIS_ORDERS = os.getenv('ALLOWED_THESIS_ORDERS').split(',')
 ALLOWED_SUPERVISOR_ORDERS = os.getenv('ALLOWED_SUPERVISOR_ORDERS').split(',')
@@ -41,7 +38,7 @@ class CreateThesisSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Limit twórców pracy nie może przekroczyć {MAX_PRODUCERS}")
         producer_emails = attrs.get('producers', [])
         if len(producer_emails) > producer_limit:
-            raise serializers.ValidationError(f"Przekroczono limit uczestników pracy")
+            raise serializers.ValidationError("Przekroczono limit uczestników pracy")
 
         producers = account_models.SystemUser.objects.filter(email__in=producer_emails)
         invalid_emails = set(producer_emails).difference(set(map(lambda u: u.email, producers)))
