@@ -23,7 +23,7 @@ export default function NotFound() {
   const rolePath = `/protected/${userRole}/theses`
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-slate-50 p-4 dark:bg-slate-900">
+    <div className="dark:bg-background flex min-h-screen w-full flex-col items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-2 text-center">
@@ -39,7 +39,7 @@ export default function NotFound() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <div className="rounded-lg bg-slate-100 p-4 dark:bg-slate-800">
+            <div className="dark:bg-muted rounded-lg bg-slate-100 p-4">
               <h3 className="mb-2 font-medium">Możliwe przyczyny:</h3>
               <ul className="text-muted-foreground list-disc space-y-1 pl-5 text-sm">
                 <li>Adres URL mógł zostać wpisany niepoprawnie</li>

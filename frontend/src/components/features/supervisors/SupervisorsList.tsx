@@ -133,7 +133,7 @@ export default function SupervisorsList({
         <h1 className="text-3xl font-bold">Lista promotorów</h1>
       </div>
 
-      <Card className="bg-slate-50">
+      <Card className="bg-background text-foreground">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="relative">
@@ -212,7 +212,7 @@ export default function SupervisorsList({
 
       <div className="space-y-4">
         {paginatedPromoters.length === 0 ? (
-          <Card className="bg-slate-50">
+          <Card className="bg-background text-foreground">
             <CardContent className="pt-6 text-center">
               <p>
                 Nie znaleziono promotorów spełniających kryteria wyszukiwania.
@@ -223,13 +223,13 @@ export default function SupervisorsList({
           paginatedPromoters.map((promoter) => (
             <Card
               key={promoter.id}
-              className="bg-slate-50 transition-shadow hover:shadow-md"
+              className="bg-background text-foreground transition-shadow hover:shadow-md"
             >
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <User className="h-5 w-5 text-slate-600" />
+                      <User className="text-muted-foreground h-5 w-5" />
                       <Link
                         href={`${basePath}/${promoter.id}`}
                         className="text-lg font-medium hover:underline"
@@ -250,7 +250,11 @@ export default function SupervisorsList({
                     <div className="flex items-center justify-end gap-2">
                       <span className="text-sm">Dostępne miejsca:</span>
                       <span
-                        className={`font-medium ${promoter.availableSlots === 0 ? "text-red-500" : "text-green-600"}`}
+                        className={`font-medium ${
+                          promoter.availableSlots === 0
+                            ? "text-destructive"
+                            : "text-success"
+                        }`}
                       >
                         {promoter.availableSlots}/{promoter.totalSlots}
                       </span>
@@ -344,16 +348,16 @@ function SupervisorsListSkeleton() {
   return (
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-48 bg-[var(--skeleton-color)]" />
       </div>
 
-      <Card className="bg-slate-50">
+      <Card className="bg-background text-foreground">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full bg-[var(--skeleton-color)]" />
             <div className="flex flex-wrap gap-4">
-              <Skeleton className="h-10 w-[270px]" />
-              <Skeleton className="h-6 w-[270px]" />
+              <Skeleton className="h-10 w-[270px] bg-[var(--skeleton-color)]" />
+              <Skeleton className="h-6 w-[270px] bg-[var(--skeleton-color)]" />
             </div>
           </div>
         </CardContent>
@@ -361,20 +365,20 @@ function SupervisorsListSkeleton() {
 
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="bg-slate-50">
+          <Card key={i} className="bg-background text-foreground">
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div className="w-3/4 space-y-2">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-6 w-full bg-[var(--skeleton-color)]" />
+                  <Skeleton className="h-4 w-1/3 bg-[var(--skeleton-color)]" />
+                  <Skeleton className="h-4 w-1/2 bg-[var(--skeleton-color)]" />
+                  <Skeleton className="h-4 w-1/2 bg-[var(--skeleton-color)]" />
                 </div>
                 <div className="text-right">
-                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-24 bg-[var(--skeleton-color)]" />
                   <div className="mt-4 flex justify-end gap-2">
-                    <Skeleton className="h-9 w-20" />
-                    <Skeleton className="h-9 w-20" />
+                    <Skeleton className="h-9 w-20 bg-[var(--skeleton-color)]" />
+                    <Skeleton className="h-9 w-20 bg-[var(--skeleton-color)]" />
                   </div>
                 </div>
               </div>
