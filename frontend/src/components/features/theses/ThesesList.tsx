@@ -56,8 +56,17 @@ export default function ThesesList({
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [tagSearchQuery, setTagSearchQuery] = useState("")
+  const [visibleTagsCount, setVisibleTagsCount] = useState(20)
 
   const allTags = useMemo(() => getTagsFromTheses(mockTheses), [])
+
+  const filteredTags = useMemo(() => {
+    return allTags.filter((tag) =>
+      tag.toLowerCase().includes(tagSearchQuery.toLowerCase()),
+    )
+  }, [allTags, tagSearchQuery])
+
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
   const filteredTopics = useMemo(() => {
@@ -154,6 +163,10 @@ export default function ThesesList({
     setCurrentPage(1)
   }, [searchQuery, fieldOfStudy, statusFilter, selectedTags])
 
+  useEffect(() => {
+    setVisibleTagsCount(20)
+  }, [tagSearchQuery])
+
   if (loading) {
     return <ThesisListSkeleton />
   }
@@ -219,7 +232,15 @@ export default function ThesesList({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
-                  {allTags.map((tag) => (
+                  <div className="p-2">
+                    <Input
+                      placeholder="Szukaj tagów..."
+                      value={tagSearchQuery}
+                      onChange={(e) => setTagSearchQuery(e.target.value)}
+                      className="mb-2"
+                    />
+                  </div>
+                  {filteredTags.slice(0, visibleTagsCount).map((tag) => (
                     <DropdownMenuItem
                       key={tag}
                       onClick={(e) => {
@@ -241,6 +262,17 @@ export default function ThesesList({
                       </Label>
                     </DropdownMenuItem>
                   ))}
+                  {filteredTags.length > visibleTagsCount && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setVisibleTagsCount((prev) => prev + 20)
+                      }}
+                      className="text-primary justify-center font-medium"
+                    >
+                      Pokaż więcej
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 

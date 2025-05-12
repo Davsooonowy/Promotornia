@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, User, SortAsc, SortDesc, Filter } from "lucide-react"
+import { Search, User, SortAsc, SortDesc } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import {
@@ -24,14 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { mockSupervisors, getTagsFromSupervisors } from "@/util/mockData"
+import { mockSupervisors } from "@/util/mockData"
 
 export interface SupervisorsListProps {
   basePath: string
@@ -51,9 +44,6 @@ export default function SupervisorsList({
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-
-  const allTags = useMemo(() => getTagsFromSupervisors(mockSupervisors), [])
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
   const filteredPromoters = useMemo(() => {
@@ -66,11 +56,8 @@ export default function SupervisorsList({
       const matchesField =
         !fieldOfStudy || promoter.department.includes(fieldOfStudy)
       const matchesSlots = !showOnlyWithSlots || promoter.availableSlots > 0
-      const matchesTags =
-        selectedTags.length === 0 ||
-        selectedTags.some((tag) => promoter.tags.includes(tag))
 
-      return matchesSearch && matchesField && matchesSlots && matchesTags
+      return matchesSearch && matchesField && matchesSlots
     })
 
     if (sortField) {
@@ -107,14 +94,7 @@ export default function SupervisorsList({
     }
 
     return result
-  }, [
-    searchQuery,
-    fieldOfStudy,
-    showOnlyWithSlots,
-    sortField,
-    sortDirection,
-    selectedTags,
-  ])
+  }, [searchQuery, fieldOfStudy, showOnlyWithSlots, sortField, sortDirection])
 
   const paginatedPromoters = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -132,13 +112,6 @@ export default function SupervisorsList({
     }
   }
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    )
-    setCurrentPage(1)
-  }
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false)
@@ -148,7 +121,7 @@ export default function SupervisorsList({
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, fieldOfStudy, showOnlyWithSlots, selectedTags])
+  }, [searchQuery, fieldOfStudy, showOnlyWithSlots])
 
   if (loading) {
     return <SupervisorsListSkeleton />
@@ -202,44 +175,6 @@ export default function SupervisorsList({
                 </Label>
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Filter className="h-4 w-4" />
-                    Tagi
-                    {selectedTags.length > 0 && (
-                      <Badge variant="secondary" className="ml-1">
-                        {selectedTags.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
-                  {allTags.map((tag) => (
-                    <DropdownMenuItem
-                      key={tag}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        toggleTag(tag)
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Checkbox
-                        checked={selectedTags.includes(tag)}
-                        onCheckedChange={() => toggleTag(tag)}
-                        id={`tag-${tag}`}
-                      />
-                      <Label
-                        htmlFor={`tag-${tag}`}
-                        className="flex-grow cursor-pointer"
-                      >
-                        {tag}
-                      </Label>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -271,29 +206,6 @@ export default function SupervisorsList({
                 </Button>
               </div>
             </div>
-
-            {selectedTags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {selectedTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="cursor-pointer"
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag} ×
-                  </Badge>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedTags([])}
-                  className="h-6 text-xs"
-                >
-                  Wyczyść wszystkie
-                </Button>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -332,13 +244,6 @@ export default function SupervisorsList({
                     <p className="text-sm">
                       Specjalizacja: {promoter.specialization}
                     </p>
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {promoter.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
 
                   <div className="text-right">
