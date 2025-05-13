@@ -367,3 +367,45 @@ Przykładowy json:
   "id": 100
 }
 ```
+
+# Endpoint PUT /theses/{thesisId}/edit
+
+**Opis:**
+Edytuje zawartość pracy
+
+## Ciało
+
+Przykładowy json: 
+
+```json
+{
+  "id": 1,
+  "title": "Temat: Analiza algorytmów uczenia maszynowego w detekcji cyberataków",
+  "fieldOfStudy": {
+    "id": 1,
+    "field": "Informatyka"
+  },
+  "description": "Lorem ipsum dolor sit amet...",
+  "prerequisitesDescription": "Lorem ipsum dolor sit amet...",
+  "tags": [
+    {
+      "id": 1,
+      "name": "Algorytmy"
+    },
+    {
+      "id": 2,
+      "name": "Cyberbezpieczeństwo"
+    },
+    {
+      "id": 3,
+      "name": "AI"
+    }
+  ]
+}
+```
+
+Dla fieldOfStudy i tags zapewne wykorzystywane będzie tylko id, ale name nie szkodzi, a unikam potencjalnie nieczytelnego mapowania na froncie
+
+Warto zweryfikować na backendzie czy status jest "Ukryty", jeśli zmieniony jest kierunek studiów (Uwaga! jeśli jest zmieniony, czyli trzeba porównać z obecnym w bazie), bo założenie jest takie, że kierunek studiów można modyfikować tylko, jeśli status to "Ukryty"
+Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Zarezerwowany", czyli jeśli status jest co najmniej "Zarezerwowany", to ten endpoint nie powinien działać
+

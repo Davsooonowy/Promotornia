@@ -190,6 +190,40 @@ export default function Thesis() {
     },
   })
 
+  const thesisMutation = useMutation({
+    mutationFn: async () => {
+      if (!thesis) return
+
+      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/edit`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: thesis.id,
+          title: thesis.title,
+          fieldOfStudy: thesis.fieldOfStudy,
+          description: thesis.description,
+          prerequisitesDescription: thesis.prerequisitesDescription,
+          tags: thesis.tags,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error("Nie udało się zapisać zmian.")
+      }
+      const data = await response.json()
+
+      if (!data) throw new Error("Nie udało się zapisać zmian.") // !!
+    },
+    onError: (e) => {
+      setMutationError(e.message)
+    },
+    onSuccess: () => {
+      setMutationSuccessMessage("Zapisano zmiany")
+    },
+  })
+
   useEffect(() => {
     if (shouldFetchThesis) {
       thesisFetch.mutate()
@@ -214,13 +248,13 @@ export default function Thesis() {
 
   useEffect(() => {
     if (mutationError) {
-      toast("Nie udało się wykonać akcji", {
+      toast.error("Nie udało się wykonać akcji", {
         description: mutationError,
       })
       setMutationError(null)
     }
     if (mutationSuccessMessage) {
-      toast("Akcja wykonana pomyślnie", {
+      toast.success("Akcja wykonana pomyślnie", {
         description: mutationSuccessMessage,
       })
       setMutationSuccessMessage(null)
@@ -231,17 +265,15 @@ export default function Thesis() {
     setEditionMode((prev) => !prev)
   }
 
-  const showToast = (title: string, desc: string) => {
-    toast(title, {
-      description: desc,
-    })
-  }
-
   useEffect(() => {
     if (allTagsFetchError)
-      showToast("Wystąpiły błędy serwera", allTagsFetchError)
+      toast.error("Wystąpiły błędy serwera", {
+        description: allTagsFetchError,
+      })
     if (fieldsOfStudyFetchError)
-      showToast("Wystąpiły błędy serwera", fieldsOfStudyFetchError)
+      toast.error("Wystąpiły błędy serwera", {
+        description: fieldsOfStudyFetchError,
+      })
   }, [allTagsFetchError, fieldsOfStudyFetchError])
 
   if (thesisFetchError) return <h1>{thesisFetchError}</h1>
@@ -250,7 +282,7 @@ export default function Thesis() {
     return (
       <div className="w-full">
         <div className="flex w-full border-y-2 px-4 py-4">
-          <div className="box-border w-2/3 space-y-3 rounded-none border-none">
+          <div className="box-border w-3/5 space-y-3 rounded-none border-none">
             <CardHeader className="flex flex-col items-start space-y-2 text-2xl">
               <CardTitle>Temat: {thesis.title}</CardTitle>
               {editionMode && (
@@ -270,10 +302,9 @@ export default function Thesis() {
                     variant="outline"
                     className="cursor-pointer"
                     onClick={() =>
-                      showToast(
-                        "Nie można wykonać akcji",
-                        "Praca jest publicznie dostępna",
-                      )
+                      toast.error("Nie można wykonać akcji", {
+                        description: "Praca jest publicznie dostępna",
+                      })
                     }
                   >
                     Edytuj kierunek
@@ -322,7 +353,7 @@ export default function Thesis() {
               )}
             </CardContent>
           </div>
-          <div className="box-border w-1/3 space-y-3 rounded-none border-none">
+          <div className="box-border w-2/5 space-y-3 rounded-none border-none">
             <CardHeader className="space-y-2 text-2xl">
               {
                 //thesis.supervisorId === tokenPayload?.user_id &&
@@ -335,6 +366,13 @@ export default function Thesis() {
                           checked={editionMode}
                           onCheckedChange={toggleEditionMode}
                         />
+                        <Button
+                          className="cursor-pointer"
+                          variant="ghost"
+                          onClick={() => thesisMutation.mutate()}
+                        >
+                          Zapisz zmiany
+                        </Button>
                         <EditThesisStatusDialog
                           thesis={thesis}
                           setThesis={setThesis}
