@@ -212,7 +212,7 @@ export function SupervisorTopMenu() {
           text: "Lista promotorów",
         },
         {
-          href: "/protected/supervisor/theses/1",
+          href: "/protected/supervisor/theses/new",
           text: "Dodaj nowy temat",
         },
       ]}

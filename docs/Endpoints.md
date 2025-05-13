@@ -311,6 +311,11 @@ Przykładowy json:
 **Opis:**
 Zmienia status rezerwacji pracy
 
+headers: {
+Authorization: `Bearer ${token}`,
+"Content-Type": "application/json",
+}
+
 Dostępne statusy:
 
 ```ts
@@ -343,3 +348,22 @@ Status może się zmienić:
 
 **Odpowiedź:**
 Brak specyfikacji
+
+# Endpoint GET /theses/new
+
+**Opis:**
+Tworzy w bazie pustą pracę, **z placeholderami** w treści i zwraca id tej pracy
+
+headers: {
+Authorization: `Bearer ${token}`,
+"Content-Type": "application/json",
+}
+
+## Odpowiedź
+
+Przykładowy json: 
+```json
+{
+  "id": 100
+}
+```
