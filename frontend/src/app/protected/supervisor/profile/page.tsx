@@ -13,10 +13,10 @@ export default function Profile() {
         <ChangePersonalData />
         <ChangePassword />
       </div>
-      <div className="ml-3 w-2/3 space-y-3">
+      {/* <div className="ml-3 w-2/3 space-y-3">
         <Label className="ml-3 text-3xl">Tagi zainteresowań:</Label>
         <ChangeSupervisorTags />
-      </div>
+      </div> */}
     </div>
   )
 }

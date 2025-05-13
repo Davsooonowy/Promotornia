@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { mockTheses, getTagsFromTheses } from "@/util/mockData"
+import { useRouter } from "next/navigation"
 
 export interface ThesesListProps {
   basePath: string
@@ -48,6 +49,8 @@ export default function ThesesList({
   canReserve = false,
   currentUserId,
 }: ThesesListProps) {
+  const router = useRouter()
+
   const [searchQuery, setSearchQuery] = useState("")
   const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -372,6 +375,11 @@ export default function ThesesList({
                           size="sm"
                           variant="outline"
                           className="cursor-pointer"
+                          onClick={() =>
+                            router.push(
+                              `/protected/supervisor/theses/${topic.id}`,
+                            )
+                          }
                         >
                           Szczegóły
                         </Button>

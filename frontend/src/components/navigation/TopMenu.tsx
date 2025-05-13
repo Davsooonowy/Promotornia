@@ -200,7 +200,7 @@ export function SupervisorTopMenu() {
     <EnhancedNavbar
       navItems={[
         {
-          href: `/protected/supervisor/theses/own/${tokenPayload.userId}`,
+          href: `/protected/supervisor/theses/own/${tokenPayload.user_id}`,
           text: "Moje tematy",
         },
         {
