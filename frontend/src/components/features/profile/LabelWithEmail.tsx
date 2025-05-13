@@ -12,7 +12,7 @@ export default function LabelWithEmail() {
   const emailQuery = useQuery({
     queryKey: ["email"],
     queryFn: async () => {
-      const response = await fetch(`${apiUrl}/user/email`, {
+      const response = await fetch(`${apiUrl}/user/personal_data`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

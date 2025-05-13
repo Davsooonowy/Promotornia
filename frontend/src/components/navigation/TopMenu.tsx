@@ -228,7 +228,7 @@ export function SupervisorTopMenu() {
     <Navbar
       navItems={[
         {
-          href: `/protected/supervisor/theses/own/${tokenPayload.userId}`,
+          href: `/protected/supervisor/theses/own/${tokenPayload.user_id}`,
           text: "Moje tematy",
         },
         {
@@ -236,7 +236,11 @@ export function SupervisorTopMenu() {
           text: "Lista tematów",
         },
         {
-          href: "/protected/supervisor/theses/1",
+          href: "/protected/supervisor/supervisors",
+          text: "Lista promotorów",
+        },
+        {
+          href: "/protected/supervisor/theses/new",
           text: "Dodaj nowy temat",
         },
       ]}

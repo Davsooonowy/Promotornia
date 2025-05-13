@@ -9,8 +9,14 @@ import useDecodeToken from "@/hooks/useDecodeToken"
 
 export default function ChangePersonalData() {
   const [editPersonalData, setEditPersonalData] = useState(false)
-  const [name, setName] = useState("Jan")
-  const [surname, setSurname] = useState("Kowalski")
+  const [name, setName] = useState<{ initial: string; current: string }>({
+    initial: "Jan",
+    current: "Jan",
+  })
+  const [surname, setSurname] = useState<{ initial: string; current: string }>({
+    initial: "Kowalski",
+    current: "Kowalski",
+  })
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState<boolean | null>(null)
   const [shouldFetch, setShouldFetch] = useState(true)
@@ -22,7 +28,7 @@ export default function ChangePersonalData() {
       const response = await fetch(`${apiUrl}/user/personal_data`, {
         method: "GET",
         headers: {
-          Authorization: "Bearer TUTAJ_TOKEN",
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       })
@@ -37,8 +43,8 @@ export default function ChangePersonalData() {
       setError(e.message)
     },
     onSuccess(data) {
-      setName(data.name)
-      setSurname(data.surname)
+      setName({ initial: data.name, current: data.name })
+      setSurname({ initial: data.surname, current: data.surname })
     },
   })
 
@@ -49,6 +55,10 @@ export default function ChangePersonalData() {
     }
   }, [personalDataFetch, shouldFetch])
 
+  useEffect(() => {
+    if (isSuccess) setShouldFetch(true)
+  }, [isSuccess, personalDataFetch])
+
   const personalDataMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch(`${apiUrl}/user/edit_personal_data`, {
@@ -58,8 +68,8 @@ export default function ChangePersonalData() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name,
-          surname,
+          name: name.current,
+          surname: surname.current,
         }),
       })
 
@@ -78,20 +88,31 @@ export default function ChangePersonalData() {
   return (
     <Card className="w-full">
       <CardContent className="space-y-3">
-        <Label>Imię i nazwisko:</Label>
+        <Label>Imię:</Label>
         <Input
           disabled={!editPersonalData}
           onInput={(e) => {
-            const [newName, ...rest] = e.currentTarget.value.split(" ")
-            setName(newName)
-            setSurname(rest.join(" "))
+            const newName = e.currentTarget.value
+            setName((name) => ({ ...name, current: newName }))
           }}
           onChange={(e) => {
-            const [newName, ...rest] = e.currentTarget.value.split(" ")
-            setName(newName)
-            setSurname(rest.join(" "))
+            const newName = e.currentTarget.value
+            setName((name) => ({ ...name, current: newName }))
           }}
-          value={name + " " + surname}
+          value={name.current}
+        />
+        <Label>Nazwisko:</Label>
+        <Input
+          disabled={!editPersonalData}
+          onInput={(e) => {
+            const newSurname = e.currentTarget.value
+            setSurname((surname) => ({ ...surname, current: newSurname }))
+          }}
+          onChange={(e) => {
+            const newSurname = e.currentTarget.value
+            setSurname((surname) => ({ ...surname, current: newSurname }))
+          }}
+          value={surname.current}
         />
         {error && <Label className="text-red-500">{error}</Label>}
         {isSuccess && (
@@ -111,7 +132,11 @@ export default function ChangePersonalData() {
               className="cursor-pointer"
               onClick={() => {
                 setEditPersonalData(false)
-                personalDataFetch.mutate()
+                setName((name) => ({ ...name, current: name.initial }))
+                setSurname((surname) => ({
+                  ...surname,
+                  current: surname.initial,
+                }))
               }}
             >
               Anuluj

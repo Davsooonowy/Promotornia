@@ -26,7 +26,7 @@ type LoginFormData = z.infer<typeof LoginFormDataSchema>
 type PasswordFormData = z.infer<typeof PasswordFormDataSchema>
 
 interface JwtPayload {
-  userId: number
+  user_id: number
   role: string
 }
 
@@ -53,6 +53,38 @@ interface ServerMessageResponse {
   message: string
 }
 
+export interface Tag {
+  id: number
+  name: string
+}
+
+interface ThesisStudent {
+  id: number
+  name: string
+  surname: string
+  email: string
+}
+
+type ThesisStatus =
+  | "Ukryty"
+  | "Dostępny"
+  | "Zarezerwowany"
+  | "Student zaakceptowany"
+  | "Zatwierdzony"
+
+interface ThesisDetails {
+  id: number
+  title: string
+  supervisor: string
+  supervisorId: number
+  fieldOfStudy: FieldOfStudy
+  description: string
+  prerequisitesDescription: string
+  status: ThesisStatus
+  tags: Tag[]
+  reservedBy: ThesisStudent | null
+}
+
 export type {
   NavigationItem,
   LoginFormData,
@@ -61,5 +93,7 @@ export type {
   FieldOfStudy,
   ServerMessageResponse,
   PasswordFormData,
+  ThesisStatus,
+  ThesisDetails,
 }
 export { LoginFormDataSchema, NewUserScheme, PasswordFormDataSchema }
