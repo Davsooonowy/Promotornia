@@ -48,11 +48,7 @@ export default function Thesis() {
     string | null
   >(null)
 
-  const [valueBeforeEdition, setValueBeforeEdition] =
-    useState<FieldOfStudy | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-
-  const { token, tokenPayload } = useDecodeToken()
+  const { token } = useDecodeToken()
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
@@ -203,6 +199,10 @@ export default function Thesis() {
       allTagsFetch.mutate()
       setShouldFetchAllTags(false)
     }
+    if (shouldFetchFieldsOfStudy) {
+      allFieldsOfStudyFetch.mutate()
+      setShouldFetchFieldsOfStudy(false)
+    }
   }, [
     thesisFetch,
     allTagsFetch,
@@ -236,6 +236,13 @@ export default function Thesis() {
       description: desc,
     })
   }
+
+  useEffect(() => {
+    if (allTagsFetchError)
+      showToast("Wystąpiły błędy serwera", allTagsFetchError)
+    if (fieldsOfStudyFetchError)
+      showToast("Wystąpiły błędy serwera", fieldsOfStudyFetchError)
+  }, [allTagsFetchError, fieldsOfStudyFetchError])
 
   if (thesisFetchError) return <h1>{thesisFetchError}</h1>
 

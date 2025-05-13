@@ -1,8 +1,6 @@
 "use client"
 import ChangePersonalData from "@/components/features/profile/ChangePersonalData"
 import ChangePassword from "@/components/features/profile/ChangePassword"
-import ChangeSupervisorTags from "@/components/features/profile/ChangeSupervisorTags"
-import { Label } from "@/components/ui/label"
 import LabelWithEmail from "@/components/features/profile/LabelWithEmail"
 
 export default function Profile() {

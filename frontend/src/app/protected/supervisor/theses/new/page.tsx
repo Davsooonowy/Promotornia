@@ -1,14 +1,14 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
-import apiUrl from "@/util/apiUrl"
-import useDecodeToken from "@/hooks/useDecodeToken"
+//import apiUrl from "@/util/apiUrl"
+//import useDecodeToken from "@/hooks/useDecodeToken"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export default function New() {
   const router = useRouter()
-  const { token } = useDecodeToken()
+  //const { token } = useDecodeToken()
   const [shouldMutate, setShouldMutate] = useState(true)
   const [pageContentText, setPageContentText] = useState("Tworzę nową pracę")
 
