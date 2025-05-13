@@ -24,6 +24,8 @@ import {
 import { cn } from "@/lib/utils"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import type { NavigationItem } from "@/util/types"
+import { useTheme } from "next-themes"
+import { Moon, Sun } from "lucide-react"
 
 interface NavbarProps {
   navItems: NavigationItem[]
@@ -31,14 +33,11 @@ interface NavbarProps {
   roleName: string
 }
 
-export function EnhancedNavbar({
-  navItems,
-  userRoleHref,
-  roleName,
-}: NavbarProps) {
+export function Navbar({ navItems, userRoleHref, roleName }: NavbarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
+  const { theme, setTheme } = useTheme()
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -88,6 +87,19 @@ export function EnhancedNavbar({
         </nav>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="mr-2"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+            <span className="sr-only">Toggle theme</span>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -147,6 +159,22 @@ export function EnhancedNavbar({
                     Profil
                   </Link>
                 </SheetClose>
+                <SheetClose asChild>
+                  <Button
+                    variant="outline"
+                    className="mt-2 w-full justify-start"
+                    onClick={() =>
+                      setTheme(theme === "dark" ? "light" : "dark")
+                    }
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Moon className="mr-2 h-4 w-4" />
+                    )}
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                  </Button>
+                </SheetClose>
                 <Button
                   variant="destructive"
                   className="mt-2 w-full justify-start"
@@ -170,7 +198,7 @@ export function StudentTopMenu() {
   if (!tokenPayload) return null
 
   return (
-    <EnhancedNavbar
+    <Navbar
       navItems={[
         {
           href: "/protected/student/theses/1",
@@ -197,7 +225,7 @@ export function SupervisorTopMenu() {
   if (!tokenPayload) return null
 
   return (
-    <EnhancedNavbar
+    <Navbar
       navItems={[
         {
           href: `/protected/supervisor/theses/own/${tokenPayload.user_id}`,
@@ -224,7 +252,7 @@ export function SupervisorTopMenu() {
 
 export function DeanTopMenu() {
   return (
-    <EnhancedNavbar
+    <Navbar
       navItems={[
         {
           href: "/protected/dean/theses",
