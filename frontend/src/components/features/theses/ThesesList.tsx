@@ -56,8 +56,17 @@ export default function ThesesList({
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [tagSearchQuery, setTagSearchQuery] = useState("")
+  const [visibleTagsCount, setVisibleTagsCount] = useState(20)
 
   const allTags = useMemo(() => getTagsFromTheses(mockTheses), [])
+
+  const filteredTags = useMemo(() => {
+    return allTags.filter((tag) =>
+      tag.toLowerCase().includes(tagSearchQuery.toLowerCase()),
+    )
+  }, [allTags, tagSearchQuery])
+
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
   const filteredTopics = useMemo(() => {
@@ -154,6 +163,10 @@ export default function ThesesList({
     setCurrentPage(1)
   }, [searchQuery, fieldOfStudy, statusFilter, selectedTags])
 
+  useEffect(() => {
+    setVisibleTagsCount(20)
+  }, [tagSearchQuery])
+
   if (loading) {
     return <ThesisListSkeleton />
   }
@@ -161,10 +174,10 @@ export default function ThesesList({
   return (
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Lista tematów</h1>
+        <h1 className="text-foreground text-3xl font-bold">Lista tematów</h1>
       </div>
 
-      <Card className="bg-slate-50">
+      <Card className="bg-card">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="relative">
@@ -179,7 +192,7 @@ export default function ThesesList({
 
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center space-x-2">
-                <Label>Kierunek studiów:</Label>
+                <Label className="text-foreground">Kierunek studiów:</Label>
                 <Select onValueChange={setFieldOfStudy}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Wybierz kierunek" />
@@ -194,7 +207,7 @@ export default function ThesesList({
               </div>
 
               <div className="flex items-center space-x-2">
-                <Label>Status:</Label>
+                <Label className="text-foreground">Status:</Label>
                 <Select onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Wybierz status" />
@@ -218,8 +231,16 @@ export default function ThesesList({
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
-                  {allTags.map((tag) => (
+                <DropdownMenuContent className="bg-card max-h-[300px] w-56 overflow-auto">
+                  <div className="p-2">
+                    <Input
+                      placeholder="Szukaj tagów..."
+                      value={tagSearchQuery}
+                      onChange={(e) => setTagSearchQuery(e.target.value)}
+                      className="mb-2"
+                    />
+                  </div>
+                  {filteredTags.slice(0, visibleTagsCount).map((tag) => (
                     <DropdownMenuItem
                       key={tag}
                       onClick={(e) => {
@@ -235,12 +256,23 @@ export default function ThesesList({
                       />
                       <Label
                         htmlFor={`tag-${tag}`}
-                        className="flex-grow cursor-pointer"
+                        className="text-foreground flex-grow cursor-pointer"
                       >
                         {tag}
                       </Label>
                     </DropdownMenuItem>
                   ))}
+                  {filteredTags.length > visibleTagsCount && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setVisibleTagsCount((prev) => prev + 20)
+                      }}
+                      className="text-primary justify-center font-medium"
+                    >
+                      Pokaż więcej
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -318,8 +350,8 @@ export default function ThesesList({
 
       <div className="space-y-4">
         {paginatedTopics.length === 0 ? (
-          <Card className="bg-slate-50">
-            <CardContent className="pt-6 text-center">
+          <Card className="bg-card">
+            <CardContent className="text-foreground pt-6 text-center">
               <p>Nie znaleziono tematów spełniających kryteria wyszukiwania.</p>
             </CardContent>
           </Card>
@@ -327,31 +359,33 @@ export default function ThesesList({
           paginatedTopics.map((topic) => (
             <Card
               key={topic.id}
-              className="bg-slate-50 transition-shadow hover:shadow-md"
+              className="bg-card transition-shadow hover:shadow-md"
             >
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-slate-600" />
+                        <FileText className="text-muted-foreground h-5 w-5" />
                         <Link
                           href={`${basePath}/${topic.id}`}
-                          className="text-lg font-medium hover:underline"
+                          className="text-foreground text-lg font-medium hover:underline"
                         >
                           {topic.title}
                         </Link>
                       </div>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-slate-500" />
+                        <User className="text-muted-foreground h-4 w-4" />
                         <Link
                           href={`${supervisorsPath}/${topic.promoterId}`}
-                          className="text-sm hover:underline"
+                          className="text-foreground text-sm hover:underline"
                         >
                           {topic.promoter}
                         </Link>
                       </div>
-                      <p className="text-sm">Katedra: {topic.department}</p>
+                      <p className="text-foreground text-sm">
+                        Katedra: {topic.department}
+                      </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {topic.createdAt}
                       </p>
@@ -361,8 +395,8 @@ export default function ThesesList({
                       <Badge
                         className={
                           topic.status === "Dostępny"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-amber-100 text-amber-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                            : "bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
                         }
                       >
                         {topic.status}
@@ -396,7 +430,7 @@ export default function ThesesList({
                       <Badge
                         key={index}
                         variant="secondary"
-                        className="bg-slate-200"
+                        className="bg-accent text-accent-foreground"
                       >
                         {tag}
                       </Badge>
@@ -481,16 +515,16 @@ function ThesisListSkeleton() {
   return (
     <div className="w-full space-y-6">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-48 bg-[var(--skeleton-color)]" />
       </div>
 
-      <Card className="bg-slate-50">
+      <Card className="bg-card">
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full bg-[var(--skeleton-color)]" />
             <div className="flex flex-wrap gap-4">
-              <Skeleton className="h-10 w-[270px]" />
-              <Skeleton className="h-10 w-[270px]" />
+              <Skeleton className="h-10 w-[270px] bg-[var(--skeleton-color)]" />
+              <Skeleton className="h-10 w-[270px] bg-[var(--skeleton-color)]" />
             </div>
           </div>
         </CardContent>
@@ -498,27 +532,27 @@ function ThesisListSkeleton() {
 
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="bg-slate-50">
+          <Card key={i} className="bg-card">
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="w-3/4 space-y-2">
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-6 w-full bg-[var(--skeleton-color)]" />
+                    <Skeleton className="h-4 w-1/3 bg-[var(--skeleton-color)]" />
+                    <Skeleton className="h-4 w-1/2 bg-[var(--skeleton-color)]" />
                   </div>
                   <div className="text-right">
-                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-6 w-24 bg-[var(--skeleton-color)]" />
                     <div className="mt-4 flex justify-end gap-2">
-                      <Skeleton className="h-9 w-20" />
-                      <Skeleton className="h-9 w-20" />
+                      <Skeleton className="h-9 w-20 bg-[var(--skeleton-color)]" />
+                      <Skeleton className="h-9 w-20 bg-[var(--skeleton-color)]" />
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-20" />
+                  <Skeleton className="h-5 w-16 bg-[var(--skeleton-color)]" />
+                  <Skeleton className="h-5 w-24 bg-[var(--skeleton-color)]" />
+                  <Skeleton className="h-5 w-20 bg-[var(--skeleton-color)]" />
                 </div>
               </div>
             </CardContent>
