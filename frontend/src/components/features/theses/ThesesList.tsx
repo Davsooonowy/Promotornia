@@ -40,6 +40,7 @@ export interface ThesesListProps {
   canEdit?: boolean
   canReserve?: boolean
   currentUserId?: number
+  filterBySupervisor?: number
 }
 
 export default function ThesesList({
@@ -48,6 +49,7 @@ export default function ThesesList({
   canEdit = false,
   canReserve = false,
   currentUserId,
+  filterBySupervisor,
 }: ThesesListProps) {
   const router = useRouter()
 
@@ -83,8 +85,16 @@ export default function ThesesList({
       const matchesTags =
         selectedTags.length === 0 ||
         selectedTags.some((tag) => topic.tags.includes(tag))
+      const matchesPromoter =
+        !filterBySupervisor || topic.promoterId === filterBySupervisor
 
-      return matchesSearch && matchesField && matchesStatus && matchesTags
+      return (
+        matchesSearch &&
+        matchesField &&
+        matchesStatus &&
+        matchesTags &&
+        matchesPromoter
+      )
     })
 
     if (sortField) {
@@ -130,6 +140,7 @@ export default function ThesesList({
     sortField,
     sortDirection,
     selectedTags,
+    filterBySupervisor,
   ])
 
   const paginatedTopics = useMemo(() => {
