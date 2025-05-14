@@ -10,8 +10,6 @@ export function handleApiError(
   error: unknown,
   fallbackMessage = "Wystąpił nieoczekiwany błąd",
 ): ApiError {
-  console.error("API Error:", error)
-
   if (typeof error === "object" && error !== null && "message" in error) {
     return error as ApiError
   }

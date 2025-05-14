@@ -75,7 +75,6 @@ export default function Home() {
         const data = await response.json()
         return data
       } catch (error) {
-        console.error("Login error:", error)
         throw error
       }
     },
@@ -108,8 +107,7 @@ export default function Home() {
           default:
             setError("Nieznana rola użytkownika")
         }
-      } catch (error) {
-        console.error("Token decode error:", error)
+      } catch {
         setError("Nieprawidłowy token")
         localStorage.removeItem("token")
       }

@@ -88,7 +88,6 @@ export default function ChangePassword() {
 
         return await response.json()
       } catch (error) {
-        console.error("Error changing password:", error)
         throw error
       }
     },

@@ -34,7 +34,6 @@ export default function LabelWithEmail() {
         setEmail(data.email)
         return data.email
       } catch (error) {
-        console.error("Error fetching email:", error)
         throw error
       }
     },

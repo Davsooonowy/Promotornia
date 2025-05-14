@@ -48,7 +48,6 @@ export default function ChangePersonalData() {
         const data = await response.json()
         return data
       } catch (error) {
-        console.error("Error fetching personal data:", error)
         throw error
       }
     },
@@ -100,7 +99,6 @@ export default function ChangePersonalData() {
 
         return await response.json()
       } catch (error) {
-        console.error("Error updating personal data:", error)
         throw error
       }
     },
