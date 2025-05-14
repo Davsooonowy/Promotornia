@@ -1,156 +1,221 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
 import useDecodeToken from "@/hooks/useDecodeToken"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
+import { LoadingErrorState } from "@/components/ui/loading-error-state"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { showErrorToast } from "@/lib/error-handling"
+import { toast } from "sonner"
 
 export default function ChangePersonalData() {
   const [editPersonalData, setEditPersonalData] = useState(false)
   const [name, setName] = useState<{ initial: string; current: string }>({
-    initial: "Jan",
-    current: "Jan",
+    initial: "",
+    current: "",
   })
   const [surname, setSurname] = useState<{ initial: string; current: string }>({
-    initial: "Kowalski",
-    current: "Kowalski",
+    initial: "",
+    current: "",
   })
-  const [error, setError] = useState<string | null>(null)
-  const [isSuccess, setIsSuccess] = useState<boolean | null>(null)
+  const [isSuccess, setIsSuccess] = useState<boolean>(false)
   const [shouldFetch, setShouldFetch] = useState(true)
 
   const { token } = useDecodeToken()
 
-  const personalDataFetch = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/user/personal_data`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+  const personalDataQuery = useQuery({
+    queryKey: ["personalData"],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`${apiUrl}/user/personal_data`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
 
-      if (!response.ok) {
-        throw new Error("Nie udało się załadować danych osobowych.")
+        if (!response.ok) {
+          throw new Error(`Błąd ${response.status}: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        return data
+      } catch (error) {
+        console.error("Error fetching personal data:", error)
+        throw error
       }
-
-      return await response.json()
     },
-    onError: (e) => {
-      setError(e.message)
-    },
-    onSuccess(data) {
-      setName({ initial: data.name, current: data.name })
-      setSurname({ initial: data.surname, current: data.surname })
-    },
+    enabled: shouldFetch,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   })
 
   useEffect(() => {
-    if (shouldFetch) {
-      personalDataFetch.mutate()
-      setShouldFetch(false)
+    if (personalDataQuery.data) {
+      setName({
+        initial: personalDataQuery.data.name,
+        current: personalDataQuery.data.name,
+      })
+      setSurname({
+        initial: personalDataQuery.data.surname,
+        current: personalDataQuery.data.surname,
+      })
     }
-  }, [personalDataFetch, shouldFetch])
+  }, [personalDataQuery.data])
 
   useEffect(() => {
     if (isSuccess) setShouldFetch(true)
-  }, [isSuccess, personalDataFetch])
+  }, [isSuccess])
 
   const personalDataMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/user/edit_personal_data`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.current,
-          surname: surname.current,
-        }),
-      })
+      try {
+        const response = await fetch(`${apiUrl}/user/edit_personal_data`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name.current,
+            surname: surname.current,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error("Nie udało się zmienić danych osobowych.")
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(
+            errorData.message ||
+              `Błąd ${response.status}: ${response.statusText}`,
+          )
+        }
+
+        return await response.json()
+      } catch (error) {
+        console.error("Error updating personal data:", error)
+        throw error
       }
     },
-    onError: (e) => {
-      setError(e.message)
+    onError: (error) => {
+      showErrorToast(error, "Nie udało się zaktualizować danych osobowych")
     },
     onSuccess: () => {
       setIsSuccess(true)
+      setEditPersonalData(false)
+      toast.success("Sukces", {
+        description: "Dane osobowe zostały zaktualizowane",
+      })
+      setTimeout(() => setIsSuccess(false), 3000)
     },
   })
 
+  const handleSave = () => {
+    personalDataMutation.mutate()
+  }
+
+  const handleCancel = () => {
+    setEditPersonalData(false)
+    setName((name) => ({ ...name, current: name.initial }))
+    setSurname((surname) => ({ ...surname, current: surname.initial }))
+  }
+
   return (
-    <Card className="w-full">
-      <CardContent className="space-y-3">
-        <Label>Imię:</Label>
-        <Input
-          disabled={!editPersonalData}
-          onInput={(e) => {
-            const newName = e.currentTarget.value
-            setName((name) => ({ ...name, current: newName }))
-          }}
-          onChange={(e) => {
-            const newName = e.currentTarget.value
-            setName((name) => ({ ...name, current: newName }))
-          }}
-          value={name.current}
-        />
-        <Label>Nazwisko:</Label>
-        <Input
-          disabled={!editPersonalData}
-          onInput={(e) => {
-            const newSurname = e.currentTarget.value
-            setSurname((surname) => ({ ...surname, current: newSurname }))
-          }}
-          onChange={(e) => {
-            const newSurname = e.currentTarget.value
-            setSurname((surname) => ({ ...surname, current: newSurname }))
-          }}
-          value={surname.current}
-        />
-        {error && <Label className="text-red-500">{error}</Label>}
-        {isSuccess && (
-          <Label className="text-green-500">Dane osobowe zaktualizowane</Label>
-        )}
-        {editPersonalData ? (
-          <div className="flex space-x-3">
-            <Button
-              className="cursor-pointer"
-              onClick={() => {
-                personalDataMutation.mutate()
-              }}
-            >
-              Zapisz
-            </Button>
-            <Button
-              className="cursor-pointer"
-              onClick={() => {
-                setEditPersonalData(false)
-                setName((name) => ({ ...name, current: name.initial }))
-                setSurname((surname) => ({
-                  ...surname,
-                  current: surname.initial,
-                }))
-              }}
-            >
-              Anuluj
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={() => setEditPersonalData(true)}
-            className="cursor-pointer"
+    <ErrorBoundary context="personalData">
+      <Card className="w-full">
+        <CardContent className="space-y-3">
+          <LoadingErrorState
+            isLoading={personalDataQuery.isLoading}
+            isError={personalDataQuery.isError}
+            error={
+              personalDataQuery.error instanceof Error
+                ? personalDataQuery.error
+                : new Error("Unknown error")
+            }
+            context="personalData"
+            resetError={() => personalDataQuery.refetch()}
           >
-            Edytuj dane osobowe
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+            <>
+              <Label>Imię:</Label>
+              <Input
+                disabled={!editPersonalData}
+                onInput={(e) => {
+                  const newName = e.currentTarget.value
+                  setName((name) => ({ ...name, current: newName }))
+                }}
+                onChange={(e) => {
+                  const newName = e.currentTarget.value
+                  setName((name) => ({ ...name, current: newName }))
+                }}
+                value={name.current}
+              />
+              <Label>Nazwisko:</Label>
+              <Input
+                disabled={!editPersonalData}
+                onInput={(e) => {
+                  const newSurname = e.currentTarget.value
+                  setSurname((surname) => ({ ...surname, current: newSurname }))
+                }}
+                onChange={(e) => {
+                  const newSurname = e.currentTarget.value
+                  setSurname((surname) => ({ ...surname, current: newSurname }))
+                }}
+                value={surname.current}
+              />
+
+              {isSuccess && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span>Dane osobowe zaktualizowane</span>
+                </div>
+              )}
+
+              {personalDataMutation.isError && (
+                <div className="text-destructive flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>Nie udało się zaktualizować danych osobowych</span>
+                </div>
+              )}
+
+              {editPersonalData ? (
+                <div className="flex space-x-3">
+                  <Button
+                    className="cursor-pointer"
+                    onClick={handleSave}
+                    disabled={personalDataMutation.isPending}
+                  >
+                    {personalDataMutation.isPending
+                      ? "Zapisywanie..."
+                      : "Zapisz"}
+                  </Button>
+                  <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={personalDataMutation.isPending}
+                  >
+                    Anuluj
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setEditPersonalData(true)}
+                  className="cursor-pointer"
+                >
+                  Edytuj dane osobowe
+                </Button>
+              )}
+            </>
+          </LoadingErrorState>
+        </CardContent>
+      </Card>
+    </ErrorBoundary>
   )
 }

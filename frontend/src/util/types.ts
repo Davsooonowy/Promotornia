@@ -85,6 +85,17 @@ interface ThesisDetails {
   reservedBy: ThesisStudent | null
 }
 
+interface Supervisor {
+  id: number
+  name: string
+  email: string
+  department: string
+  specialization: string
+  availableSlots: number
+  totalSlots: number
+  tags: string[]
+}
+
 export type {
   NavigationItem,
   LoginFormData,
@@ -93,6 +104,7 @@ export type {
   FieldOfStudy,
   ServerMessageResponse,
   PasswordFormData,
+  Supervisor,
   ThesisStatus,
   ThesisDetails,
 }
