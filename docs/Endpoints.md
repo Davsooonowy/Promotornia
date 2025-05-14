@@ -459,4 +459,4 @@ Przykładowy json:
 Dla fieldOfStudy i tags zapewne wykorzystywane będzie tylko id, ale name nie szkodzi, a unikam potencjalnie nieczytelnego mapowania na froncie
 
 Warto zweryfikować na backendzie czy status jest "Ukryty", jeśli zmieniony jest kierunek studiów (Uwaga! jeśli jest zmieniony, czyli trzeba porównać z obecnym w bazie), bo założenie jest takie, że kierunek studiów można modyfikować tylko, jeśli status to "Ukryty"
-Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Zarezerwowany", czyli jeśli status jest co najmniej "Zarezerwowany", to ten endpoint nie powinien działać
+Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Student zaakceptowany", czyli jeśli status jest co najmniej "Student zaakceptowany", to ten endpoint nie powinien działać
