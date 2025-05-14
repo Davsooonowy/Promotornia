@@ -306,6 +306,56 @@ Przykładowy json:
 }
 ```
 
+# Endpoint POST /fieldsOfStudy
+
+**Opis:**
+Tworzy nowy kierunek studiów
+
+headers: {
+Authorization: `Bearer ${token}`,
+"Content-Type": "application/json",
+}
+
+## Ciało
+
+| Nazwa | Typ    | Wymagany | Opis           |
+| ----- | ------ | -------- | -------------- |
+| field | string | Tak      | Nazwa kierunku |
+
+# Endpoint PUT /fieldsOfStudy/{id}
+
+**Opis:**
+Edytuje obecny kierunek studiów
+
+headers: {
+Authorization: `Bearer ${token}`,
+"Content-Type": "application/json",
+}
+
+## Ciało
+
+| Nazwa | Typ    | Wymagany | Opis           |
+| ----- | ------ | -------- | -------------- |
+| field | string | Tak      | Nowa nazwa kierunku |
+
+## Parametry
+
+| Nazwa | Typ    | Wymagany | Opis           |
+| ----- | ------ | -------- | -------------- |
+| id | string | Tak      | id edytowanego kierunku |
+
+
+# Endpoint DELETE /fieldsOfStudy/{id}
+
+**Opis:**
+Usuwa kierunek studiów o danym id
+
+## Parametry
+
+| Nazwa | Typ    | Wymagany | Opis           |
+| ----- | ------ | -------- | -------------- |
+| id | string | Tak      | id usuwanego kierunku |
+
 # Endpoint PUT /theses/${thesisId}/status/edit
 
 **Opis:**
@@ -328,6 +378,7 @@ type ThesisStatus =
 ```
 
 Status może się zmienić:
+
 - z "Ukryty" na dostępny i na odwrót (1)
 - z "Dostępny" na "Zarezerwowany" (2)
 - z "Zarezerwowany" na "Student zaakceptowany" (3)
@@ -340,11 +391,11 @@ Status może się zmienić:
 (4) dokonuje student, który ostatecznie zatwierdza realizację pracy
 (5) dokonuje student, rezygnując z realizacji pracy
 
-(1) gdy status zmieniany jest na ukryty, obecna rezerwacja studenta jest usuwana, pole ```reservedBy``` od wtedy powinno być zwracane jako null
+(1) gdy status zmieniany jest na ukryty, obecna rezerwacja studenta jest usuwana, pole `reservedBy` od wtedy powinno być zwracane jako null
 (2) uzupełniane jest wtedy pole reservedBy
 (3) na backendzie po prostu zmieniany jest status, tylko, że od tego statusu w górę już promotor nie może edytować zawartości pracy
 (4) tu też chyba po prostu zmieniany jest status na backendzie, promotor nie może edytować zawartości pracy
-(5) ```reservedBy``` jest null, promotor może edytować zawartość pracy
+(5) `reservedBy` jest null, promotor może edytować zawartość pracy
 
 **Odpowiedź:**
 Brak specyfikacji
@@ -361,7 +412,8 @@ Authorization: `Bearer ${token}`,
 
 ## Odpowiedź
 
-Przykładowy json: 
+Przykładowy json:
+
 ```json
 {
   "id": 100
@@ -375,7 +427,7 @@ Edytuje zawartość pracy
 
 ## Ciało
 
-Przykładowy json: 
+Przykładowy json:
 
 ```json
 {
@@ -408,4 +460,3 @@ Dla fieldOfStudy i tags zapewne wykorzystywane będzie tylko id, ale name nie sz
 
 Warto zweryfikować na backendzie czy status jest "Ukryty", jeśli zmieniony jest kierunek studiów (Uwaga! jeśli jest zmieniony, czyli trzeba porównać z obecnym w bazie), bo założenie jest takie, że kierunek studiów można modyfikować tylko, jeśli status to "Ukryty"
 Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Zarezerwowany", czyli jeśli status jest co najmniej "Zarezerwowany", to ten endpoint nie powinien działać
-

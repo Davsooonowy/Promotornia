@@ -236,10 +236,6 @@ export function SupervisorTopMenu() {
           text: "Lista tematów",
         },
         {
-          href: "/protected/supervisor/supervisors",
-          text: "Lista promotorów",
-        },
-        {
           href: "/protected/supervisor/theses/new",
           text: "Dodaj nowy temat",
         },
@@ -269,6 +265,10 @@ export function DeanTopMenu() {
         {
           href: "/protected/dean/manage_users?user_type=supervisor",
           text: "Zarządzaj promotorami",
+        },
+        {
+          href: "/protected/dean/other_actions",
+          text: "Pozostałe akcje",
         },
       ]}
       userRoleHref="dean"
