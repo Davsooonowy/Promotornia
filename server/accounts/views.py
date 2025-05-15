@@ -7,7 +7,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from . import permissions
 from . import serializers
-from . import models
 
 
 class RegisterView(APIView):

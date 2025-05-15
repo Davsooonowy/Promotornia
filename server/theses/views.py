@@ -8,8 +8,8 @@ from rest_framework.pagination import PageNumberPagination
 from . import serializers
 from . import models
 
-from django.db.models import Count, F, Value, Q, Sum, ExpressionWrapper, IntegerField
-from django.db.models.functions import Concat, Coalesce
+from django.db.models import Count, F, Value, Q, ExpressionWrapper, IntegerField
+from django.db.models.functions import Concat
 
 from accounts import permissions as account_permissions
 from accounts import serializers as account_serializers
@@ -99,6 +99,7 @@ class ThesisListView(APIView):
 
         for record in data:
             record.pop('description', None)
+            record.pop('prerequisites', None)
             record['field_of_study'].pop('description', None)
             record.pop('producer', None)
 
@@ -186,25 +187,3 @@ class TagView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         tag = serializer.save()
         return Response(serializers.TagSerializer(tag).data, status=status.HTTP_201_CREATED)
-
-class MyTagView(APIView):
-
-    permission_classes = [account_permissions.IsSupervisor]
-
-    def get(self, request):
-        tags = request.user.tags
-        return Response({"tags": serializers.TagSerializer(tags, many=True).data}, status=status.HTTP_200_OK)
-
-    def put(self, request):
-        user = request.user
-        serializer = serializers.UpdateTagsSerializer(
-            instance=user,
-            data=request.data
-        )
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        user = serializer.save()
-        tags = serializers.TagSerializer(user.tags, many=True).data
-        return Response({"tags": serializers.TagSerializer(user.tags, many=True).data}, status=status.HTTP_200_OK)

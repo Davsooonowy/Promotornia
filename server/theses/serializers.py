@@ -30,21 +30,6 @@ def validate_tags(tag_ids):
 
     return valid_tags
 
-class UpdateTagsSerializer(serializers.Serializer):
-    tags = serializers.ListField(default=[])
-
-    def validate(self, attrs):
-        tag_ids = attrs.get('tags')
-        valid_tags = validate_tags(tag_ids)
-        attrs['tags'] = valid_tags
-        return attrs
-
-    def update(self, instance, validated_data):
-        tags = validated_data.get('tags')
-        instance.tags.set(tags)
-        instance.save()
-        return instance
-
 class ThesisSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     owner = account_serializers.UserSerializer(read_only=True)
