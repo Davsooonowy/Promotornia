@@ -239,7 +239,7 @@ Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po
 | email | string | | |
 | firstName | string | | |
 | lastName | string | | |
-| fieldOfStudy | List[FieldOfStudy] | | Kierunki studiów, gdzie pracuje promotor |
+| fieldOfStudy | FieldOfStudy | | Kierunek + wydział |
 | freeSpots | number | | Liczba wolnych miejsc |
 | totalSpots | number | | Liczba wolnych + zajętych miejsc |
 
