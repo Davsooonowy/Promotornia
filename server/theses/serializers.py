@@ -9,13 +9,47 @@ MAX_PRODUCERS = int(os.getenv('MAX_PRODUCER_COUNT'))
 ALLOWED_THESIS_ORDERS = os.getenv('ALLOWED_THESIS_ORDERS').split(',')
 ALLOWED_SUPERVISOR_ORDERS = os.getenv('ALLOWED_SUPERVISOR_ORDERS').split(',')
 
-class ThesisSerializer(serializers.ModelSerializer):
-    tags = account_serializers.TagSerializer(many=True, read_only=True)
-    owner = account_serializers.UserSerializer(read_only=True)
-    producers = account_serializers.UserSerializer(many=True, read_only=True)
-    field_of_study = account_serializers.FieldOfStudySerializer(read_only=True)
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = '__all__'
 
-    free_spots = serializers.IntegerField()
+    def create(self, validated_data):
+        tag = models.Tag.objects.create(**validated_data)
+        return tag
+
+def validate_tags(tag_ids):
+    valid_tags = models.Tag.objects.filter(id__in=tag_ids)
+    if valid_tags.count() < len(tag_ids):
+        invalid_tags = set(tag_ids).difference(map(lambda t: t.id, valid_tags))
+        if len(invalid_tags) == 1:
+            message = f"Tag {invalid_tags.pop()} nie istnieje w bazie danych"
+        else:
+            message = f"Tagi {', '.join(map(str, invalid_tags))} nie istnieją w bazie"
+        raise serializers.ValidationError(message)
+
+    return valid_tags
+
+class UpdateTagsSerializer(serializers.Serializer):
+    tags = serializers.ListField(default=[])
+
+    def validate(self, attrs):
+        tag_ids = attrs.get('tags')
+        valid_tags = validate_tags(tag_ids)
+        attrs['tags'] = valid_tags
+        return attrs
+
+    def update(self, instance, validated_data):
+        tags = validated_data.get('tags')
+        instance.tags.set(tags)
+        instance.save()
+        return instance
+
+class ThesisSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    owner = account_serializers.UserSerializer(read_only=True)
+    producer = account_serializers.UserSerializer(read_only=True)
+    field_of_study = account_serializers.FieldOfStudySerializer(read_only=True)
 
     class Meta:
         model = models.Thesis
@@ -26,28 +60,22 @@ class CreateThesisSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     description = serializers.CharField()
     tags = serializers.ListField(default=[])
-    producers = serializers.ListField(default=[])
-    producer_limit = serializers.IntegerField(default=1)
+    producer = serializers.EmailField(default=None)
     field_of_study = serializers.IntegerField()
 
     def validate(self, attrs):
-        producer_limit = attrs.get('producerLimit', 1)
-        if producer_limit <= 0:
-            raise serializers.ValidationError("Nieprawidłowa wartość limitu twórców")
-        if producer_limit > MAX_PRODUCERS:
-            raise serializers.ValidationError(f"Limit twórców pracy nie może przekroczyć {MAX_PRODUCERS}")
-        producer_emails = attrs.get('producers', [])
-        if len(producer_emails) > producer_limit:
-            raise serializers.ValidationError("Przekroczono limit uczestników pracy")
+        producer_email = attrs.get('producer')
 
-        producers = account_models.SystemUser.objects.filter(email__in=producer_emails)
-        invalid_emails = set(producer_emails).difference(set(map(lambda u: u.email, producers)))
-        if len(invalid_emails) > 0:
-            if len(invalid_emails) == 1:
-                message = f"Adres {invalid_emails.pop()} nie istnieje w bazie danych"
-            else:
-                message = f"Adresy {', '.join(invalid_emails)} nie istnieją w bazie danych"
-            raise serializers.ValidationError(message)
+        if producer_email is not None:
+            try:
+                producer = account_models.SystemUser.objects.get(
+                    email=producer_email,
+                    is_student=True
+                )
+
+                attrs['producer'] = producer
+            except account_models.SystemUser.DoesNotExist:
+                raise serializers.ValidationError("Podany student nie istnieje")
 
         user: account_models.SystemUser = self.context['user']
         field_of_study_id = attrs.get('field_of_study')
@@ -57,22 +85,16 @@ class CreateThesisSerializer(serializers.Serializer):
         attrs['field_of_study'] = field_of_study
 
         tag_ids = attrs.get('tags')
-        valid_tags = account_serializers.validate_tags(tag_ids)
+        valid_tags = validate_tags(tag_ids)
 
         attrs['tags'] = valid_tags
-        attrs['producers'] = producers
         return attrs
 
     def create(self, validated_data: dict):
-        tags = validated_data.pop('tags')
-        producers = validated_data.pop('producers')
         validated_data['owner'] = self.context['user']
+        tags = validated_data.pop('tags')
         thesis = models.Thesis.objects.create(**validated_data)
         thesis.tags.add(*tags)
-        thesis.producers.add(*producers)
-
-        thesis.free_spots = validated_data.get('producer_limit') - producers.count()
-
         return thesis
 
 class ListThesesSerializer(serializers.Serializer):
@@ -98,7 +120,7 @@ class ListThesesSerializer(serializers.Serializer):
                 tag_ids = list(map(int, tags.split(',')))
             except ValueError:
                 raise serializers.ValidationError("Niepoprawny format identyfikatorów tagów")
-            valid_tags = account_serializers.validate_tags(tag_ids)
+            valid_tags = validate_tags(tag_ids)
             attrs['tags'] = valid_tags
 
         order = attrs.get('order')
@@ -135,10 +157,9 @@ class ListSupervisorsSerializer(serializers.Serializer):
                 tag_ids = list(map(int, tags.split(',')))
             except ValueError:
                 raise serializers.ValidationError("Niepoprawny format identyfikatorów tagów")
-            valid_tags = account_serializers.validate_tags(tag_ids)
+            valid_tags = validate_tags(tag_ids)
             attrs['tags'] = valid_tags
 
-        print(ALLOWED_SUPERVISOR_ORDERS)
         if order is not None and order.lower() not in ALLOWED_SUPERVISOR_ORDERS:
             raise serializers.ValidationError(f"Nie można uporządkować danych po {order}")
 

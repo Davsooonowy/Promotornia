@@ -16,9 +16,10 @@ from accounts import serializers as account_serializers
 from accounts import models as account_models
 
 import os
-
+from utils.camelize import camelize
 
 ITEMS_PER_PAGE = os.getenv('ITEMS_PER_PAGE')
+THESIS_STATUSES = os.getenv('THESIS_STATUSES').split(',')
 
 class ThesisView(APIView):
 
@@ -38,8 +39,8 @@ class ThesisView(APIView):
             thesis = thesis[0]
             if thesis.owner != request.user:
                 return Response(status=status.HTTP_403_FORBIDDEN)
-            thesis.free_spots = thesis.producer_limit - thesis.producers.count()
-            return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_200_OK)
+            resp = serializers.ThesisSerializer(thesis).data
+            return Response(camelize(resp), status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, thesis_id):
@@ -67,25 +68,19 @@ class ThesisListView(APIView):
         ascending = serializer.validated_data.get('ascending')
 
         objects = models.Thesis.objects.all().annotate(
-            full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name')),
-            num_producers=Count('producers'),
-            free_spots=ExpressionWrapper(
-                F('producer_limit') - F('num_producers'),
-                output_field=IntegerField()
-            )
+            full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
         if field_of_study is not None:
             objects = objects.filter(owner__field_of_study__id=field_of_study)
         if tags is not None:
             objects = objects.filter(tags__in=tags)
-        if available is not None:
-            if available:
-                objects = objects.filter(num_producers__lt=F('producer_limit'))
-            else:
-                objects = objects.filter(num_producers__exact=F('producer_limit'))
         if search is not None:
             objects = (objects
                        .filter(Q(name__icontains=search) | Q(full_name__icontains=search)))
+        if available is not None:
+            objects = objects.filter(
+                status="Dostępny"
+            )
         if order is not None:
             desc = '' if ascending else '-'
             match order:
@@ -105,9 +100,9 @@ class ThesisListView(APIView):
         for record in data:
             record.pop('description', None)
             record['field_of_study'].pop('description', None)
-            record.pop('producers', None)
+            record.pop('producer', None)
 
-        return Response({"theses": data}, status=status.HTTP_200_OK)
+        return Response({"theses": camelize(data)}, status=status.HTTP_200_OK)
 
 class SupervisorListView(APIView):
 
@@ -126,10 +121,19 @@ class SupervisorListView(APIView):
 
         objects = account_models.SystemUser.objects.filter(is_supervisor=True)
 
+        non_hidden = [stat for stat in THESIS_STATUSES if stat != 'Ukryty']
+        print(non_hidden)
+        taken = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         objects = objects.annotate(
             full_name=Concat(F('first_name'), Value(' '), F('last_name')),
-            total_spots=Coalesce(Sum('owned_theses__producer_limit'), 0),
-            taken_spots=Count('owned_theses__producers'),
+            total_spots=Count(
+                'owned_theses',
+                filter=Q(owned_theses__status__in=non_hidden)
+            ),
+            taken_spots=Count(
+                'owned_theses',
+                filter=Q(owned_theses__status__in=taken)
+            ),
             free_spots = ExpressionWrapper(
                 F('total_spots') - F('taken_spots'),
                 output_field=IntegerField()
@@ -159,4 +163,48 @@ class SupervisorListView(APIView):
             for field in record['field_of_study']:
                 field.pop('description', None)
 
-        return Response({"supervisors": data}, status=status.HTTP_200_OK)
+        return Response({"supervisors": camelize(data)}, status=status.HTTP_200_OK)
+
+class TagListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tags = models.Tag.objects.all()
+        tags = serializers.TagSerializer(tags, many=True).data
+        return Response(
+            {"tags": tags},
+            status=status.HTTP_200_OK
+        )
+
+class TagView(APIView):
+    permission_classes = [account_permissions.IsSupervisor]
+
+    def post(self, request):
+        serializer = serializers.TagSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        tag = serializer.save()
+        return Response(serializers.TagSerializer(tag).data, status=status.HTTP_201_CREATED)
+
+class MyTagView(APIView):
+
+    permission_classes = [account_permissions.IsSupervisor]
+
+    def get(self, request):
+        tags = request.user.tags
+        return Response({"tags": serializers.TagSerializer(tags, many=True).data}, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        user = request.user
+        serializer = serializers.UpdateTagsSerializer(
+            instance=user,
+            data=request.data
+        )
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.save()
+        tags = serializers.TagSerializer(user.tags, many=True).data
+        return Response({"tags": serializers.TagSerializer(user.tags, many=True).data}, status=status.HTTP_200_OK)
