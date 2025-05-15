@@ -6,3 +6,4 @@ djangorestframework-simplejwt
 django-allauth
 dotenv
 pyhumps
+python-dateutil

@@ -19,9 +19,10 @@ import {
 } from "@/util/types"
 import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
-import { GraduationCap } from "lucide-react"
+import { GraduationCap, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import apiUrl from "@/util/apiUrl"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 
 export default function Home() {
   const router = useRouter()
@@ -40,6 +41,8 @@ export default function Home() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
+      setError(null)
+
       const result = LoginFormDataSchema.safeParse(formData)
 
       if (!result.success) {
@@ -48,44 +51,67 @@ export default function Home() {
           email: fieldErrors.email?.[0],
           password: fieldErrors.password?.[0],
         })
-        return
+        return null
       }
       setFormErrors({})
 
-      const response = await fetch(`${apiUrl}/user/login/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
+      try {
+        const response = await fetch(`${apiUrl}/user/login/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        })
 
-      const data = await response.json()
-      if (!response.ok) {
-        setError(data.message)
-        return
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || "Błąd logowania")
+        }
+
+        const data = await response.json()
+        return data
+      } catch (error) {
+        throw error
       }
+    },
+    onError: (error) => {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError("Wystąpił nieznany błąd podczas logowania")
+      }
+    },
+    onSuccess: (data) => {
+      if (!data) return
+
       const token = data.access
-
       localStorage.setItem("token", token)
-      const tokenPayload = jwtDecode<JwtPayload>(token)
 
-      switch (tokenPayload.role) {
-        case "dean":
-          router.push("/protected/dean/profile")
-          break
-        case "supervisor":
-          router.push("/protected/supervisor/profile")
-          break
-        case "student":
-          router.push("/protected/student/profile")
-          break
-        default:
-          setError("Nieznana rola użytkownika")
+      try {
+        const tokenPayload = jwtDecode<JwtPayload>(token)
+
+        switch (tokenPayload.role) {
+          case "dean":
+            router.push("/protected/dean/profile")
+            break
+          case "supervisor":
+            router.push("/protected/supervisor/profile")
+            break
+          case "student":
+            router.push("/protected/student/profile")
+            break
+          default:
+            setError("Nieznana rola użytkownika")
+        }
+      } catch {
+        setError("Nieprawidłowy token")
+        localStorage.removeItem("token")
       }
+
       setRender(true)
     },
   })
@@ -118,7 +144,7 @@ export default function Home() {
     setFormData((formState) => ({ ...formState, password: password }))
 
   return (
-    <>
+    <ErrorBoundary context="login">
       {render && (
         <div className="flex min-h-screen w-full items-center justify-center bg-slate-50">
           <div className="w-full max-w-md px-4">
@@ -172,7 +198,10 @@ export default function Home() {
                   )}
                 </div>
                 {error && (
-                  <p className="text-center text-sm text-red-500">{error}</p>
+                  <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md p-2 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{error}</span>
+                  </div>
                 )}
                 <Button
                   type="button"
@@ -187,6 +216,6 @@ export default function Home() {
           </div>
         </div>
       )}
-    </>
+    </ErrorBoundary>
   )
 }
