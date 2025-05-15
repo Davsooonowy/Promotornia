@@ -412,6 +412,90 @@ Authorization: `Bearer ${token}`,
 
 ## Odpowiedź
 
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| email     | string    | Tak      | Obecny e-mail usera   |
+
+# Endpoint GET /thesis/list?page&fieldOfStudy&tags&available&order&ascending&search
+
+**Opis:**
+Zwróć listę dostępnych prac dyplomowych
+
+headers: {
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Parametry
+| Nazwa  | Typ    | Wymagany | Opis                       | Default |
+|--------|--------|----------|----------------------------|---------|
+| page | number | Nie | Numer strony | 1 |
+| fieldOfStudy | number | Nie | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None` | `None` |
+| tags | List[number] | Nie | Lista tagów do filtracji. Podawane w formacie `tags=1,2,3` | `None` |
+| available | boolean | Nie | Flaga czy dany temat pracy jest zajęty czy nie | `None` |
+| order | string | Nie | Wartość po której powinny być porządkowane dane. Na ten moment jedyne dozwolone to `name`, `supervisor`, `date` | `None` |
+| ascending | boolean | Nie | Kolejność porządku | `True` |
+| search | string | Nie | Fraza do wyszukania (szuka po promotorach i nazwach tematów) | `None` |
+
+## Odpowiedź
+`User = {id: number, email: string, first_name: string, last_name: string}`
+
+`FieldOfStudy = {id: number, name: string}`
+
+**Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| id | number | | Identyfikator pracy |
+| name | string | | Nazwa pracy |
+| owner | User | | Opiekun pracy |
+| fieldOfStudy | FieldOfStudy | | Kierunek studiów (wraz z wydziałem) gdzie realizowana jest praca |
+| dateOfCreation | DateTime | | Data utworzenia |
+| tags | List[{id: number, name: string}] | | Lista tagów |
+| status | string | | Status pracy dyplomowej |
+
+
+# Endpoint GET /supervisors/list?page&fieldOfStudy&available&order&ascending&search
+
+**Opis:**
+Zwróć listę promotorów
+
+headers: {
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Parametry
+Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po imieniu i nazwisku promotora, `order` może być jednym z `[free_spots, last_name]`
+
+## Odpowiedź
+
+`FieldOfStudy = {id: number, name: string}`
+
+**Odpowiedzią jest {supervisors: List[Supervisor]}. Struktura `Supervisor` poniżej**
+
+
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| id | number | | ID promotora |
+| email | string | | |
+| firstName | string | | |
+| lastName | string | | |
+| fieldOfStudy | FieldOfStudy | | Kierunek + wydział |
+| freeSpots | number | | Liczba wolnych miejsc |
+| totalSpots | number | | Liczba wolnych + zajętych miejsc |
+
+# Endpoint POST /supervisor/tags
+
+**Opis:**
+Dodaje nowy tag
+
+headers: {
+  Content-Type: "application/json"
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Ciało
+| Nazwa  | Typ    | Wymagany | Opis                       | Default |
+|--------|--------|----------|----------------------------|---------|
+| name | string | tak | Nazwa tagu | - |
 Przykładowy json:
 
 ```json
