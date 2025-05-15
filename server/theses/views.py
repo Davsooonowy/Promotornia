@@ -99,6 +99,7 @@ class ThesisListView(APIView):
 
         for record in data:
             record.pop('description', None)
+            record.pop('prerequisites', None)
             record['field_of_study'].pop('description', None)
             record.pop('producer', None)
 
