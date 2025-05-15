@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0001_squashed_0009_alter_systemuser_expiration_date'),
+        ('accounts', '0004_alter_systemuser_expiration_date_squashed_0009_alter_systemuser_expiration_date'),
         ('theses', '0006_tag_remove_thesis_producer_limit_and_more'),
     ]
 
