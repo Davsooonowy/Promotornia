@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from . import permissions
+from . import permissions, models
 from . import serializers
 
 
@@ -80,3 +80,32 @@ class PersonalDataView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FieldOfStudyView(APIView):
+    permission_classes = (IsAuthenticated, permissions.IsDean)
+
+    def get(self, request):
+        fields_of_study = models.FieldOfStudy.objects.all()
+        serializer = serializers.FieldOfStudySerializer(fields_of_study, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = serializers.FieldOfStudySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        field_of_study = models.FieldOfStudy.objects.get(pk=pk)
+        serializer = serializers.FieldOfStudySerializer(field_of_study, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        field_of_study = models.FieldOfStudy.objects.get(pk=pk)
+        field_of_study.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

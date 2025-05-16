@@ -145,10 +145,9 @@ class LoginSerializer(TokenObtainPairSerializer):
         return data
 
 class FieldOfStudySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.FieldOfStudy
-        fields = '__all__'
+        fields = ('id', 'name', 'description')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

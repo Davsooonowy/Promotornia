@@ -9,4 +9,7 @@ urlpatterns = [
     path('user/login/refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('user/new_password/', views.ChangePasswordView.as_view(), name='change_password'),
     path('user/personal_data/', views.PersonalDataView.as_view(), name='personal_data'),
+    path('field_of_study/', views.FieldOfStudyView.as_view(), name='field_of_study'),
+    path('field_of_study/<int:pk>/', views.FieldOfStudyView.as_view(), name='field_of_study'),
+
 ]
