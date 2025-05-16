@@ -46,3 +46,37 @@ class DeanView(APIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = serializers.LoginSerializer
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        print(request.data)
+        serializer = serializers.ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({'error': 'Invalid old password'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+
+        print(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PersonalDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = serializers.PersonalDataSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = serializers.PersonalDataSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
