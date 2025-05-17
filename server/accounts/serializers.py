@@ -69,7 +69,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             if not isinstance(user_data, dict):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
             validate_email(user_data.get('email', ''))
-            user_data["password"] = ''.join([chr(random.randint(33, 127)) for _ in range(PASSWORD_LENGTH)])
+            user_data["password"] = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH))
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
