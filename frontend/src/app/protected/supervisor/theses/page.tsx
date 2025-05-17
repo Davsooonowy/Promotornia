@@ -4,7 +4,7 @@ import useDecodeToken from "@/hooks/useDecodeToken"
 
 export default function ThesesListPage() {
   const { tokenPayload } = useDecodeToken()
-  const currentUserId = tokenPayload?.userId
+  const currentUserId = tokenPayload?.user_id
 
   return (
     <ThesesList

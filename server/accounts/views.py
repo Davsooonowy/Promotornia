@@ -1,14 +1,16 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from django.core.mail import send_mail
 from django.conf import settings
 
 from . import serializers
 from . import permissions
+from . import serializers
 
 
 class RegisterView(APIView):
@@ -25,14 +27,14 @@ class RegisterView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class DeanView(APIView):
 
+class DeanView(APIView):
     permission_classes = (IsAuthenticated, permissions.IsDean)
 
     def post(self, request):
         serializer = serializers.DeanCreateUsersSerializer(data=request.data)
         if serializer.is_valid():
-            result = serializer.save()
+            serializer.save()
             # mailing logic
             for user in serializer.plaintext_credentials:
                 send_mail(
@@ -52,3 +54,7 @@ class DeanView(APIView):
             users.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = serializers.LoginSerializer

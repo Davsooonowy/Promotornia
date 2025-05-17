@@ -16,18 +16,11 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { FieldOfStudy } from "@/util/types"
-import { UseMutationResult } from "@tanstack/react-query"
-
-const fieldsOfStudy: FieldOfStudy[] = [
-  {
-    id: 1,
-    field: "Informatyka",
-  },
-  {
-    id: 2,
-    field: "Cyberbezpieczeństwo",
-  },
-]
+import { useMutation, UseMutationResult } from "@tanstack/react-query"
+import { useState, useEffect } from "react"
+import apiUrl from "@/util/apiUrl"
+import useDecodeToken from "@/hooks/useDecodeToken"
+import { mockFieldsOfStudy } from "@/util/mockData"
 
 export default function ActionDialog(props: {
   actionToLabel: Map<string, string>
@@ -40,6 +33,48 @@ export default function ActionDialog(props: {
   fieldOfStudy: FieldOfStudy | null
   actionMutation: UseMutationResult<void, Error, void, unknown>
 }) {
+  const [fieldsOfStudy, setFieldsOfStudy] = useState(mockFieldsOfStudy)
+  const [fieldsOfStudyFetchError, setFieldsOfStudyFetchError] = useState<
+    string | null
+  >(null)
+  const [shouldFetchFieldsOfStudy, setShouldFetchFieldsOfStudy] = useState(true)
+
+  const { token } = useDecodeToken()
+
+  const allFieldsOfStudyFetch = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Nie udało się załadować dostępnych kierunków studiów.")
+      }
+
+      const data = await response.json()
+
+      const allFieldsOfStudy = data.fieldsOfStudy
+      return allFieldsOfStudy
+    },
+    onError: (e) => {
+      setFieldsOfStudyFetchError(e.message)
+    },
+    onSuccess: (allFieldsOfStudy) => {
+      setFieldsOfStudy(allFieldsOfStudy)
+    },
+  })
+
+  useEffect(() => {
+    if (shouldFetchFieldsOfStudy) {
+      allFieldsOfStudyFetch.mutate()
+      setShouldFetchFieldsOfStudy(false)
+    }
+  }, [shouldFetchFieldsOfStudy, allFieldsOfStudyFetch])
+
   const getDialogContent = () => {
     switch (props.action) {
       case "addUsers":
@@ -86,6 +121,9 @@ export default function ActionDialog(props: {
                 ))}
               </SelectContent>
             </Select>
+            {fieldsOfStudyFetchError && (
+              <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
+            )}
             <div className="flex w-full justify-end">
               <Button
                 className="cursor-pointer"

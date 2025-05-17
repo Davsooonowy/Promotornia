@@ -1,14 +1,18 @@
 
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from . import models
 import os
 import datetime
-import random
+import secrets
+import string
 
 ALLOWED_DOMAINS = os.getenv('ALLOWED_DOMAINS').split(",")
 USER_TYPES = os.getenv('USER_TYPES').split(",")
-PASSWORD_LENGTH = 50
+PASSWORD_LENGTH = int(os.getenv('PASSWORD_LENGTH'))
 
 def validate_email(email):
     try:
@@ -79,9 +83,11 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         if not models.FieldOfStudy.objects.filter(id=field_id, name=field_name).exists():
             raise serializers.ValidationError(f"Kierunek {field_name} nie istnieje w bazie danych!")
 
+        field_of_study = models.FieldOfStudy.objects.get(id=field_id)
+        data['field_of_study'] = field_of_study
         exp_date = data.get('expirationDate')
         if datetime.date.today() > exp_date:
-            raise serializers.ValidationError(f"Należy podać datę ważności późniejszą niż dzień dzisiejszy")
+            raise serializers.ValidationError("Należy podać datę ważności późniejszą niż dzień dzisiejszy")
 
         return data
 
@@ -100,16 +106,65 @@ class DeanCreateUsersSerializer(serializers.Serializer):
                 "email": user_data["email"],
                 "password": user_data["password"]
             })
-        add_result = models.SystemUser.objects.bulk_create(users)
+        with transaction.atomic():
+            add_result = models.SystemUser.objects.bulk_create(users)
+            for user in add_result:
+                user.field_of_study.add(validated_data["fieldOfStudy"]["id"])
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
-    usersToDelete = serializers.ListField()
+    usersToDelete = serializers.ListField(
+        child=serializers.EmailField(),
+        allow_empty=False
+    )
 
     def validate(self, data):
-        for user_data in data.get('usersToDelete', []):
-            validate_email(user_data.get("email", ""))
-        users = models.SystemUser.objects.filter(email__in=data.get('usersToDelete', []))
-        if users.filter(is_dean=True).count() > 0:
+        emails = data.get('usersToDelete', [])
+        for email in emails:
+            validate_email(email)
+
+        users = models.SystemUser.objects.filter(email__in=emails)
+        if users.filter(is_dean=True).exists():
             raise serializers.ValidationError("Brak uprawnień usuwania pracowników dziekanatu!")
+
         return users
+
+class LoginSerializer(TokenObtainPairSerializer):
+    def get_token(self, user):
+        token = super().get_token(user)
+
+        if user.is_dean:
+            token['role'] = 'dean'
+        elif user.is_supervisor:
+            token['role'] = 'supervisor'
+        elif user.is_student:
+            token['role'] = 'student'
+        else:
+            token['role'] = 'unknown'
+
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        return data
+
+class FieldOfStudySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.FieldOfStudy
+        fields = '__all__'
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'first_name', 'last_name', 'title')
+
+class SupervisorSerializer(serializers.ModelSerializer):
+    free_spots = serializers.IntegerField(default=0)
+    total_spots = serializers.IntegerField(default=0)
+    field_of_study = FieldOfStudySerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.SystemUser
+        fields = ('id', 'email', 'title', 'first_name', 'last_name', 'field_of_study',
+                  'free_spots', 'total_spots')
