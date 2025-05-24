@@ -141,7 +141,6 @@ class SupervisorListView(APIView):
         taken = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         objects = objects.annotate(
             full_name=Concat(F('first_name'), Value(' '), F('last_name')),
-            total_spots=F('total_spots'),
             taken_spots=Count(
                 'owned_theses',
                 filter=Q(owned_theses__status__in=taken)

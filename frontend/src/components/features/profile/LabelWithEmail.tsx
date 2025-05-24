@@ -12,11 +12,11 @@ import { AlertCircle } from "lucide-react"
 
 export default function LabelWithEmail() {
   const [email, setEmail] = useState<string | null>(null)
-  const { token } = useDecodeToken()
 
   const emailQuery = useQuery({
     queryKey: ["email"],
     queryFn: async () => {
+      const token = localStorage.getItem("token")
       try {
         const response = await fetch(`${apiUrl}/user/personal_data/`, {
           method: "GET",
