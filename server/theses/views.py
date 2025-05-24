@@ -65,10 +65,10 @@ class ThesisView(APIView):
 class ThesisListView(APIView):
 
     def get(self, request):
-
         serializer = serializers.ListThesesSerializer(data=request.GET)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         field_of_study = serializer.validated_data.get('fieldOfStudy')
         tags = serializer.validated_data.get('tags')
         search = serializer.validated_data.get('search')
@@ -79,17 +79,24 @@ class ThesisListView(APIView):
         objects = models.Thesis.objects.all().annotate(
             full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
+
         if field_of_study is not None:
-            objects = objects.filter(owner__field_of_study__id=field_of_study)
+            objects = objects.filter(field_of_study__id=field_of_study)
+
         if tags is not None:
             objects = objects.filter(tags__in=tags)
+
         if search is not None:
-            objects = (objects
-                       .filter(Q(name__icontains=search) | Q(full_name__icontains=search)))
-        if available is not None:
-            objects = objects.filter(
-                status="Dostępny"
+            objects = (objects.filter(
+                Q(name__icontains=search) | Q(full_name__icontains=search))
             )
+
+        if available is not None:
+            if available == "available":
+                objects = objects.filter(status="Dostępny")
+            else:
+                objects = objects.exclude(status="Dostępny")
+
         if order is not None:
             desc = '' if ascending else '-'
             match order:

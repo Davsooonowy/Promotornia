@@ -1,4 +1,5 @@
 "use client"
+import apiUrl from "@/util/apiUrl"
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,8 +32,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { mockTheses, getTagsFromTheses } from "@/util/mockData"
 import { useRouter } from "next/navigation"
+import { FieldOfStudy, ThesisDetails} from "@/util/types";
 
 export interface ThesesListProps {
   basePath: string
@@ -63,92 +64,84 @@ export default function ThesesList({
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [tagSearchQuery, setTagSearchQuery] = useState("")
   const [visibleTagsCount, setVisibleTagsCount] = useState(20)
+  const [theses, setTheses] = useState<ThesisDetails[] | null>([])
+  const [allTags, setAllTags] = useState<Tag[]>([])
 
-  const allTags = useMemo(() => getTagsFromTheses(mockTheses), [])
+  useEffect(() => {
+    const fetchTheses = async () => {
+      setLoading(true)
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(
+    `${apiUrl}/thesis/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&tags=${selectedTags.join(",")}&available=${statusFilter || ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        )
+
+        if (!response.ok) throw new Error("Failed to fetch theses")
+        const data = await response.json()
+
+        const mappedTheses = data.theses.map((thesis: ThesisDetails) => ({
+          id: thesis.id,
+          title: thesis.name,
+          description: thesis.description,
+          prerequisitesDescription: thesis.prerequisites,
+          fieldOfStudy: thesis.field_of_study,
+          tags: thesis.tags,
+          supervisor: thesis.owner.first_name + " " + thesis.owner.last_name,
+          supervisorId: thesis.owner.id,
+          status: thesis.status,
+          createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
+        }))
+
+        setTheses(mappedTheses)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTheses()
+  }, [currentPage, searchQuery, fieldOfStudy, selectedTags, statusFilter, sortField, sortDirection])
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${apiUrl}/all_supervisor_interest_tags/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) throw new Error("Failed to fetch tags")
+        const data = await response.json()
+        setAllTags(data.tags)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    fetchTags()
+  }, [])
 
   const filteredTags = useMemo(() => {
     return allTags.filter((tag) =>
-      tag.toLowerCase().includes(tagSearchQuery.toLowerCase()),
+      tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase()),
     )
   }, [allTags, tagSearchQuery])
 
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-  const filteredTopics = useMemo(() => {
-    let result = mockTheses.filter((topic) => {
-      const matchesSearch =
-        topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        topic.promoter.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesField =
-        !fieldOfStudy || topic.department.includes(fieldOfStudy)
-      const matchesStatus = !statusFilter || topic.status === statusFilter
-      const matchesTags =
-        selectedTags.length === 0 ||
-        selectedTags.some((tag) => topic.tags.includes(tag))
-      const matchesPromoter =
-        !filterBySupervisor || topic.promoterId === filterBySupervisor
-
-      return (
-        matchesSearch &&
-        matchesField &&
-        matchesStatus &&
-        matchesTags &&
-        matchesPromoter
-      )
-    })
-
-    if (sortField) {
-      result = [...result].sort((a, b) => {
-        let valueA, valueB
-
-        switch (sortField) {
-          case "title":
-            valueA = a.title
-            valueB = b.title
-            break
-          case "promoter":
-            valueA = a.promoter
-            valueB = b.promoter
-            break
-          case "date":
-            valueA = new Date(a.createdAt)
-            valueB = new Date(b.createdAt)
-            break
-          default:
-            return 0
-        }
-
-        if (valueA instanceof Date && valueB instanceof Date) {
-          return sortDirection === "asc"
-            ? valueA.getTime() - valueB.getTime()
-            : valueB.getTime() - valueA.getTime()
-        } else if (typeof valueA === "string" && typeof valueB === "string") {
-          return sortDirection === "asc"
-            ? valueA.localeCompare(valueB)
-            : valueB.localeCompare(valueA)
-        } else {
-          return 0
-        }
-      })
-    }
-
-    return result
-  }, [
-    searchQuery,
-    fieldOfStudy,
-    statusFilter,
-    sortField,
-    sortDirection,
-    selectedTags,
-    filterBySupervisor,
-  ])
-
-  const paginatedTopics = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredTopics.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredTopics, currentPage, itemsPerPage])
-
-  const totalPages = Math.ceil(filteredTopics.length / itemsPerPage)
+  const totalPages = Math.ceil(theses?.length | 0 / itemsPerPage)
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -212,8 +205,8 @@ export default function ThesesList({
                     <SelectValue placeholder="Wybierz kierunek" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Informatyka">Informatyka</SelectItem>
-                    <SelectItem value="Cyberbezpieczeństwo">
+                    <SelectItem value="1">Informatyka</SelectItem>
+                    <SelectItem value="2">
                       Cyberbezpieczeństwo
                     </SelectItem>
                   </SelectContent>
@@ -227,8 +220,8 @@ export default function ThesesList({
                     <SelectValue placeholder="Wybierz status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Dostępny">Dostępny</SelectItem>
-                    <SelectItem value="Zarezerwowany">Zarezerwowany</SelectItem>
+                    <SelectItem value="available">Dostępny</SelectItem>
+                    <SelectItem value="noavailable">Zarezerwowany</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -256,7 +249,7 @@ export default function ThesesList({
                   </div>
                   {filteredTags.slice(0, visibleTagsCount).map((tag) => (
                     <DropdownMenuItem
-                      key={tag}
+                      key={tag.id}
                       onClick={(e) => {
                         e.preventDefault()
                         toggleTag(tag)
@@ -269,10 +262,10 @@ export default function ThesesList({
                         id={`tag-${tag}`}
                       />
                       <Label
-                        htmlFor={`tag-${tag}`}
+                        htmlFor={`tag-${tag.id}`}
                         className="text-foreground flex-grow cursor-pointer"
                       >
-                        {tag}
+                        {tag.name}
                       </Label>
                     </DropdownMenuItem>
                   ))}
@@ -340,12 +333,12 @@ export default function ThesesList({
               <div className="flex flex-wrap gap-2 pt-2">
                 {selectedTags.map((tag) => (
                   <Badge
-                    key={tag}
+                    key={tag.id}
                     variant="secondary"
                     className="cursor-pointer"
                     onClick={() => toggleTag(tag)}
                   >
-                    {tag} ×
+                    {tag.name} ×
                   </Badge>
                 ))}
                 <Button
@@ -363,14 +356,14 @@ export default function ThesesList({
       </Card>
 
       <div className="space-y-4">
-        {paginatedTopics.length === 0 ? (
+        {theses.length === 0 ? (
           <Card className="bg-card">
             <CardContent className="text-foreground pt-6 text-center">
               <p>Nie znaleziono tematów spełniających kryteria wyszukiwania.</p>
             </CardContent>
           </Card>
         ) : (
-          paginatedTopics.map((topic) => (
+          theses.map((topic) => (
             <Card
               key={topic.id}
               className="bg-card transition-shadow hover:shadow-md"
@@ -391,14 +384,14 @@ export default function ThesesList({
                       <div className="flex items-center gap-2">
                         <User className="text-muted-foreground h-4 w-4" />
                         <Link
-                          href={`${supervisorsPath}/${topic.promoterId}`}
+                          href={`${supervisorsPath}/${topic.supervisorId}`}
                           className="text-foreground text-sm hover:underline"
                         >
-                          {topic.promoter}
+                          {topic.supervisor}
                         </Link>
                       </div>
                       <p className="text-foreground text-sm">
-                        Katedra: {topic.department}
+                        Katedra: {topic.fieldOfStudy.name}
                       </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {topic.createdAt}
@@ -445,13 +438,13 @@ export default function ThesesList({
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {topic.tags.map((tag, index) => (
+                    {topic.tags.map((tag) => (
                       <Badge
-                        key={index}
+                        key={tag.id}
                         variant="secondary"
                         className="bg-accent text-accent-foreground"
                       >
-                        {tag}
+                        {tag.name}
                       </Badge>
                     ))}
                   </div>
@@ -469,7 +462,7 @@ export default function ThesesList({
         )}
       </div>
 
-      {filteredTopics.length > 0 && (
+      {theses.length > 0 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>

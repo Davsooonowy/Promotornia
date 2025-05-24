@@ -84,6 +84,7 @@ interface ThesisDetails {
   status: ThesisStatus
   tags: Tag[]
   reservedBy: ThesisStudent | null
+  createdAt: string
 }
 
 interface Supervisor {

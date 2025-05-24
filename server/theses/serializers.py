@@ -87,7 +87,7 @@ class ListThesesSerializer(serializers.Serializer):
     tags = serializers.CharField(default=None)
     order = serializers.CharField(default=None)
     ascending = serializers.BooleanField(default=True)
-    available = serializers.BooleanField(required=False, allow_null=True)
+    available = serializers.CharField(required=False, allow_null=True)
     search = serializers.CharField(default=None)
 
     def validate(self, attrs):

@@ -292,7 +292,7 @@ export default function Thesis() {
               )}
             </CardHeader>
             <CardContent className="flex w-2/3 flex-col items-start space-y-6">
-              <Label>Kierunek: {thesis.fieldOfStudy.field}</Label>
+              <Label>Kierunek: {thesis.fieldOfStudy.name}</Label>
               {editionMode &&
                 (thesis.status !== "Ukryty" ? (
                   <Button
