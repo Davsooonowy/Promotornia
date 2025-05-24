@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='thesis',
             name='status',
-            field=models.CharField(default='Ukryty'),
+            field=models.CharField(default='Ukryty', max_length=255),
         ),
         migrations.AlterField(
             model_name='thesis',

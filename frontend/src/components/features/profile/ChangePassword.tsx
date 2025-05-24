@@ -66,15 +66,15 @@ export default function ChangePassword() {
       }
 
       try {
-        const response = await fetch(`${apiUrl}/user/new_password`, {
+        const response = await fetch(`${apiUrl}/user/new_password/`, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            oldPassword,
-            newPassword: passwordFormData.newPassword,
+            old_password: oldPassword,
+            new_password: passwordFormData.newPassword,
           }),
         })
 

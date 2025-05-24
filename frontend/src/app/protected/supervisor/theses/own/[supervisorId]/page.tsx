@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import apiUrl from "@/util/apiUrl"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,8 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { PlusCircle, AlertCircle, FileText } from "lucide-react"
 import Link from "next/link"
-import { mockSupervisors, mockTheses } from "@/util/mockData"
-import { Supervisor } from "@/util/types"
+import { Supervisor, ThesisDetails } from "@/util/types"
 import { useRouter } from "next/navigation"
 import {
   Pagination,
@@ -25,40 +25,90 @@ export default function OwnTheses() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [supervisor, setSupervisor] = useState<Supervisor | null>(null)
+  const [theses, setTheses] = useState<ThesisDetails[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-  // tutaj fetchowanie naszego superwajzora to jest TODO dla bekendowców, teraz bierzemy z mocków
   useEffect(() => {
-    const fetchSupervisor = async () => {
-      const foundSupervisor = mockSupervisors.find(
-        (s) => s.id === numericSupervisorId,
-      )
+    const fetchSupervisorAndTheses = async () => {
+      try {
+        setLoading(true)
+        const token = localStorage.getItem("token")
+        const supervisorResponse = await fetch(
+          `${apiUrl}/supervisors/${numericSupervisorId}/`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+        if (!supervisorResponse.ok) {
+          throw new Error("Wystąpił błąd podczas pobierania danych promotora.")
+        }
 
-      setTimeout(() => {
-        setSupervisor(foundSupervisor || null)
+        const supervisorData = await supervisorResponse.json()
+
+        const mappedSupervisor: Supervisor = {
+          id: supervisorData.id,
+          name: `${supervisorData.title} ${supervisorData.first_name} ${supervisorData.last_name}`,
+          email: supervisorData.email,
+          department: supervisorData.field_of_study.name,
+          specialization: supervisorData.description || "N/A",
+          availableSlots: supervisorData.free_spots,
+          totalSlots: supervisorData.total_spots,
+        }
+
+        setSupervisor(mappedSupervisor)
+
+        const thesesResponse = await fetch(
+          `${apiUrl}/thesis/supervisor/${numericSupervisorId}/`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+
+        if (!thesesResponse.ok) {
+          throw new Error("Wystąpił błąd podczas pobierania tematów prac.")
+        }
+
+        const data = await thesesResponse.json()
+
+        const mappedTheses = data.theses.map((thesis) => ({
+          id: thesis.id,
+          title: thesis.name,
+          description: thesis.description,
+          prerequisitesDescription: thesis.prerequisites,
+          fieldOfStudy: thesis.field_of_study,
+          tags: thesis.tags,
+          supervisor: thesis.owner.first_name + " " + thesis.owner.last_name,
+          supervisorId: thesis.owner.id,
+          status: thesis.status,
+          createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
+        }))
+
+        setTheses(mappedTheses)
+      } catch {
+        throw new Error(
+          "Nie udało się pobrać danych promotora lub tematów prac.",
+        )
+      } finally {
         setLoading(false)
-      }, 600)
+      }
     }
 
-    fetchSupervisor()
+    fetchSupervisorAndTheses()
   }, [numericSupervisorId])
 
-  const supervisorTheses = useMemo(() => {
-    return mockTheses.filter(
-      (thesis) => thesis.promoterId === numericSupervisorId,
-    )
-  }, [numericSupervisorId])
-
-  const currentTheses = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return supervisorTheses.slice(startIndex, startIndex + itemsPerPage)
-  }, [supervisorTheses, currentPage, itemsPerPage])
-
-  const totalPages = Math.ceil(supervisorTheses.length / itemsPerPage)
+  const totalPages = Math.ceil(theses.length / itemsPerPage)
 
   const remainingCapacity = supervisor
-    ? supervisor.totalSlots - supervisorTheses.length
+    ? supervisor.totalSlots - theses.length
     : 0
   const capacityStatus =
     remainingCapacity <= 0
@@ -101,14 +151,14 @@ export default function OwnTheses() {
       </div>
 
       <div className="space-y-4">
-        {currentTheses.length === 0 ? (
+        {theses.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <p>Nie masz jeszcze żadnych tematów prac.</p>
             </CardContent>
           </Card>
         ) : (
-          currentTheses.map((thesis) => (
+          theses.map((thesis) => (
             <Card key={thesis.id} className="transition-shadow hover:shadow-md">
               <CardContent className="pt-6">
                 <div className="space-y-4">
@@ -123,7 +173,9 @@ export default function OwnTheses() {
                           {thesis.title}
                         </Link>
                       </div>
-                      <p className="text-sm">Katedra: {thesis.department}</p>
+                      <p className="text-sm">
+                        Katedra: {thesis.fieldOfStudy.name}
+                      </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {thesis.createdAt}
                       </p>
@@ -160,19 +212,21 @@ export default function OwnTheses() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {thesis.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
+                    {thesis.tags.map((tag) => (
+                      <Badge key={tag.id} variant="secondary">
+                        {tag.name}
                       </Badge>
                     ))}
                   </div>
 
-                  {thesis.reservedBy && (
-                    <div className="text-muted-foreground text-sm">
-                      Zarezerwowany przez:{" "}
-                      <span className="font-medium">{thesis.reservedBy}</span>
-                    </div>
-                  )}
+                  {/*{thesis.reservedBy && (*/}
+                  {/*  <div className="text-muted-foreground text-sm">*/}
+                  {/*    Zarezerwowany przez:{" "}*/}
+                  {/*    <span className="font-medium">*/}
+                  {/*      {thesis.reservedBy.id}*/}
+                  {/*    </span>*/}
+                  {/*  </div>*/}
+                  {/*)}*/}
                 </div>
               </CardContent>
             </Card>
@@ -180,7 +234,7 @@ export default function OwnTheses() {
         )}
       </div>
 
-      {supervisorTheses.length > itemsPerPage && (
+      {theses.length > itemsPerPage && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>

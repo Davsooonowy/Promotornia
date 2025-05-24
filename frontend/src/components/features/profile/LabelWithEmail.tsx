@@ -1,7 +1,5 @@
 "use client"
-
 import { Label } from "@/components/ui/label"
-import useDecodeToken from "@/hooks/useDecodeToken"
 import apiUrl from "@/util/apiUrl"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
@@ -12,13 +10,13 @@ import { AlertCircle } from "lucide-react"
 
 export default function LabelWithEmail() {
   const [email, setEmail] = useState<string | null>(null)
-  const { token } = useDecodeToken()
 
   const emailQuery = useQuery({
     queryKey: ["email"],
     queryFn: async () => {
+      const token = localStorage.getItem("token")
       try {
-        const response = await fetch(`${apiUrl}/user/personal_data`, {
+        const response = await fetch(`${apiUrl}/user/personal_data/`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

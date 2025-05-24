@@ -20,7 +20,8 @@ type CrudAction = "create" | "read" | "update" | "delete"
 
 interface FieldOfStudy {
   id: number
-  field: string
+  name: string
+  description: string //TODO: add description field
 }
 
 export default function OtherActions() {
@@ -29,19 +30,21 @@ export default function OtherActions() {
   const [inputValue, setInputValue] = useState("")
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
+  const [shouldFetch, setShouldFetch] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   const { token } = useDecodeToken()
 
   // CREATE
   const createMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+      const response = await fetch(`${apiUrl}/field_of_study/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ field: inputValue }),
+        body: JSON.stringify({ name: inputValue, description: "placeholder" }),
       })
 
       if (!response.ok) throw new Error()
@@ -50,7 +53,7 @@ export default function OtherActions() {
       setMutationError("Nie udało się stworzyć nowego kierunku studiów")
     },
     onSuccess: () => {
-      readMutation.mutate() // odśwież listę po dodaniu
+      readMutation.mutate()
       setInputValue("")
     },
   })
@@ -58,7 +61,7 @@ export default function OtherActions() {
   // READ
   const readMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+      const response = await fetch(`${apiUrl}/field_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -72,13 +75,15 @@ export default function OtherActions() {
 
       if (!data) throw new Error()
 
-      return data.fieldsOfStudy
+      return data
     },
     onError: () => {
       setMutationError("Nie udało się załadować kierunków studiów")
+      setShouldFetch(true)
     },
     onSuccess: (data: FieldOfStudy[]) => {
       setFieldsOfStudy(data)
+      setLoading(false)
     },
   })
 
@@ -86,13 +91,13 @@ export default function OtherActions() {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (selectedId === null) throw new Error()
-      const response = await fetch(`${apiUrl}/fieldsOfStudy/${selectedId}`, {
+      const response = await fetch(`${apiUrl}/field_of_study/${selectedId}/`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ field: inputValue }),
+        body: JSON.stringify({ name: inputValue, description: "placeholder" }),
       })
 
       if (!response.ok) throw new Error()
@@ -111,7 +116,7 @@ export default function OtherActions() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (selectedId === null) throw new Error()
-      const response = await fetch(`${apiUrl}/fieldsOfStudy/${selectedId}`, {
+      const response = await fetch(`${apiUrl}/field_of_study/${selectedId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -131,10 +136,11 @@ export default function OtherActions() {
   })
 
   useEffect(() => {
-    if (action === "read") {
+    if (action === "read" && shouldFetch) {
       readMutation.mutate()
+      setShouldFetch(false)
     }
-  }, [action, readMutation])
+  }, [action, readMutation, shouldFetch])
 
   useEffect(() => {
     if (mutationError) {
@@ -160,11 +166,17 @@ export default function OtherActions() {
       </Select>
 
       {action === "read" && (
-        <ul>
-          {fieldsOfStudy.map((f) => (
-            <li key={f.id}>{f.field}</li>
-          ))}
-        </ul>
+        <div>
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            <ul>
+              {fieldsOfStudy.map((f) => (
+                <li key={f.id}>{f.name}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {(action === "create" || action === "update") && (
@@ -184,7 +196,7 @@ export default function OtherActions() {
               <SelectContent>
                 {fieldsOfStudy.map((f) => (
                   <SelectItem key={f.id} value={f.id.toString()}>
-                    {f.field}
+                    {f.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -210,7 +222,7 @@ export default function OtherActions() {
             <SelectContent>
               {fieldsOfStudy.map((f) => (
                 <SelectItem key={f.id} value={f.id.toString()}>
-                  {f.field}
+                  {f.name}
                 </SelectItem>
               ))}
             </SelectContent>

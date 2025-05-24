@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,7 +24,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { mockSupervisors } from "@/util/mockData"
+import { FieldOfStudy, Supervisor } from "@/util/types"
+import apiUrl from "@/util/apiUrl"
 
 export interface SupervisorsListProps {
   basePath: string
@@ -38,70 +39,55 @@ export default function SupervisorsList({
   currentUserId,
 }: SupervisorsListProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
+  const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
   const [showOnlyWithSlots, setShowOnlyWithSlots] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [supervisors, setSupervisors] = useState<Supervisor[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
+  const [totalPages, setTotalPages] = useState(1)
 
-  const filteredPromoters = useMemo(() => {
-    let result = mockSupervisors.filter((promoter) => {
-      const matchesSearch =
-        promoter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        promoter.specialization
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      const matchesField =
-        !fieldOfStudy || promoter.department.includes(fieldOfStudy)
-      const matchesSlots = !showOnlyWithSlots || promoter.availableSlots > 0
+  useEffect(() => {
+    const fetchSupervisors = async () => {
+      setLoading(true)
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(
+          `${apiUrl}/supervisors/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&available=${showOnlyWithSlots ? "true" : ""}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
 
-      return matchesSearch && matchesField && matchesSlots
-    })
+        if (!response.ok) throw new Error("Nie udało się pobrać promotorów")
+        const data = await response.json()
 
-    if (sortField) {
-      result = [...result].sort((a, b) => {
-        let valueA, valueB
+        const mappedSupervisors = data.supervisors.map((supervisor) => ({
+          id: supervisor.id,
+          name: `${supervisor.title} ${supervisor.first_name} ${supervisor.last_name}`,
+          email: supervisor.email,
+          department: supervisor.field_of_study[0].name,
+          specialization: supervisor.description || "N/A",
+          availableSlots: supervisor.free_spots,
+          totalSlots: supervisor.total_spots,
+        }))
 
-        switch (sortField) {
-          case "name":
-            valueA = a.name
-            valueB = b.name
-            break
-          case "availableSlots":
-            valueA = a.availableSlots
-            valueB = b.availableSlots
-            break
-          case "department":
-            valueA = a.department
-            valueB = b.department
-            break
-          default:
-            return 0
-        }
-
-        if (typeof valueA === "string" && typeof valueB === "string") {
-          return sortDirection === "asc"
-            ? valueA.localeCompare(valueB)
-            : valueB.localeCompare(valueA)
-        } else {
-          return sortDirection === "asc"
-            ? (valueA as number) - (valueB as number)
-            : (valueB as number) - (valueA as number)
-        }
-      })
+        setSupervisors(mappedSupervisors)
+        setTotalPages(data.totalPages)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    return result
-  }, [searchQuery, fieldOfStudy, showOnlyWithSlots, sortField, sortDirection])
-
-  const paginatedPromoters = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage
-    return filteredPromoters.slice(startIndex, startIndex + itemsPerPage)
-  }, [filteredPromoters, currentPage, itemsPerPage])
-
-  const totalPages = Math.ceil(filteredPromoters.length / itemsPerPage)
+    fetchSupervisors()
+  }, [searchQuery, fieldOfStudy, showOnlyWithSlots, currentPage])
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -154,10 +140,8 @@ export default function SupervisorsList({
                     <SelectValue placeholder="Wybierz kierunek" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Informatyka">Informatyka</SelectItem>
-                    <SelectItem value="Cyberbezpieczeństwo">
-                      Cyberbezpieczeństwo
-                    </SelectItem>
+                    <SelectItem value="1">Informatyka</SelectItem>
+                    <SelectItem value="2">Cyberbezpieczeństwo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -211,7 +195,7 @@ export default function SupervisorsList({
       </Card>
 
       <div className="space-y-4">
-        {paginatedPromoters.length === 0 ? (
+        {supervisors.length === 0 ? (
           <Card className="bg-background text-foreground">
             <CardContent className="pt-6 text-center">
               <p>
@@ -220,7 +204,7 @@ export default function SupervisorsList({
             </CardContent>
           </Card>
         ) : (
-          paginatedPromoters.map((promoter) => (
+          supervisors.map((promoter) => (
             <Card
               key={promoter.id}
               className="bg-background text-foreground transition-shadow hover:shadow-md"
@@ -283,7 +267,7 @@ export default function SupervisorsList({
         )}
       </div>
 
-      {filteredPromoters.length > 0 && (
+      {supervisors.length > 0 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>

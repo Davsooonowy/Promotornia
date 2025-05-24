@@ -99,7 +99,7 @@ Authorization: "Bearer TUTAJ_TOKEN",
 | surname | string | Tak      | Nazwisko |
 | email   | string | Tak      | Email    |
 
-# Endpoint PUT /user/edit_personal_data
+# Endpoint PUT /user/personal_data
 
 **Opis:**
 Zmodyfikuj obecne dane usera

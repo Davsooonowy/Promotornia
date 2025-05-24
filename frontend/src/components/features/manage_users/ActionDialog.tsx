@@ -19,8 +19,6 @@ import { FieldOfStudy } from "@/util/types"
 import { useMutation, UseMutationResult } from "@tanstack/react-query"
 import { useState, useEffect } from "react"
 import apiUrl from "@/util/apiUrl"
-import useDecodeToken from "@/hooks/useDecodeToken"
-import { mockFieldsOfStudy } from "@/util/mockData"
 
 export default function ActionDialog(props: {
   actionToLabel: Map<string, string>
@@ -33,17 +31,18 @@ export default function ActionDialog(props: {
   fieldOfStudy: FieldOfStudy | null
   actionMutation: UseMutationResult<void, Error, void, unknown>
 }) {
-  const [fieldsOfStudy, setFieldsOfStudy] = useState(mockFieldsOfStudy)
+  const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[] | null>(
+    null,
+  )
   const [fieldsOfStudyFetchError, setFieldsOfStudyFetchError] = useState<
     string | null
   >(null)
   const [shouldFetchFieldsOfStudy, setShouldFetchFieldsOfStudy] = useState(true)
 
-  const { token } = useDecodeToken()
-
   const allFieldsOfStudyFetch = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/field_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -102,7 +101,7 @@ export default function ActionDialog(props: {
                 <SelectValue
                   placeholder={
                     props.fieldOfStudy
-                      ? props.fieldOfStudy.field
+                      ? props.fieldOfStudy.name
                       : "Wybierz kierunek"
                   }
                 />
@@ -113,10 +112,10 @@ export default function ActionDialog(props: {
                     key={fieldOfStudy.id}
                     value={JSON.stringify({
                       id: fieldOfStudy.id,
-                      field: fieldOfStudy.field,
+                      name: fieldOfStudy.name,
                     })}
                   >
-                    {fieldOfStudy.field}
+                    {fieldOfStudy.name}
                   </SelectItem>
                 ))}
               </SelectContent>

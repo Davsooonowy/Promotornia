@@ -87,7 +87,7 @@ class ListThesesSerializer(serializers.Serializer):
     tags = serializers.CharField(default=None)
     order = serializers.CharField(default=None)
     ascending = serializers.BooleanField(default=True)
-    available = serializers.BooleanField(required=False, allow_null=True)
+    available = serializers.CharField(required=False, allow_null=True)
     search = serializers.CharField(default=None)
 
     def validate(self, attrs):
@@ -149,3 +149,23 @@ class ListSupervisorsSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Nie można uporządkować danych po {order}")
 
         return attrs
+
+
+class UpdateThesisSerializer(serializers.ModelSerializer):
+    tags = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True
+    )
+    owner = account_serializers.UserSerializer(read_only=True)
+    producer = account_serializers.UserSerializer(read_only=True)
+    field_of_study = account_serializers.FieldOfStudySerializer(read_only=True)
+
+    class Meta:
+        model = models.Thesis
+        fields = '__all__'
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop('tags', None)
+        if tags is not None:
+            validated_tags = validate_tags(tags)
+            instance.tags.set(validated_tags)
+        return super().update(instance, validated_data)
