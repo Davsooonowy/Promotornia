@@ -23,7 +23,6 @@ const PasswordFormDataSchema = z
 
 type LoginFormData = z.infer<typeof LoginFormDataSchema>
 
-
 interface JwtPayload {
   user_id: number
   role: string

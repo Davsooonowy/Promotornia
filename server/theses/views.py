@@ -137,7 +137,6 @@ class SupervisorListView(APIView):
 
         objects = account_models.SystemUser.objects.filter(is_supervisor=True)
 
-        non_hidden = [stat for stat in THESIS_STATUSES if stat != 'Ukryty']
         taken = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         objects = objects.annotate(
             full_name=Concat(F('first_name'), Value(' '), F('last_name')),

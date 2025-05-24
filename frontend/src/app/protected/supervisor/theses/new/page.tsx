@@ -19,7 +19,7 @@ export default function New() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({formData})
+        body: JSON.stringify({}),
       })
 
       if (!response.ok) {

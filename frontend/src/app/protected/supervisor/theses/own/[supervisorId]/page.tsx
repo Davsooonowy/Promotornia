@@ -24,7 +24,6 @@ export default function OwnTheses() {
   const numericSupervisorId = Number(supervisorId)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [supervisor, setSupervisor] = useState<Supervisor | null>(null)
   const [theses, setTheses] = useState<ThesisDetails[]>([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -34,7 +33,6 @@ export default function OwnTheses() {
     const fetchSupervisorAndTheses = async () => {
       try {
         setLoading(true)
-        setError(null)
         const token = localStorage.getItem("token")
         const supervisorResponse = await fetch(
           `${apiUrl}/supervisors/${numericSupervisorId}/`,
@@ -57,6 +55,7 @@ export default function OwnTheses() {
           name: `${supervisorData.title} ${supervisorData.first_name} ${supervisorData.last_name}`,
           email: supervisorData.email,
           department: supervisorData.field_of_study.name,
+          specialization: supervisorData.description || "N/A",
           availableSlots: supervisorData.free_spots,
           totalSlots: supervisorData.total_spots,
         }
@@ -95,7 +94,9 @@ export default function OwnTheses() {
 
         setTheses(mappedTheses)
       } catch {
-        setError("Wystąpił błąd podczas ładowania danych.")
+        throw new Error(
+          "Nie udało się pobrać danych promotora lub tematów prac.",
+        )
       } finally {
         setLoading(false)
       }
@@ -172,7 +173,9 @@ export default function OwnTheses() {
                           {thesis.title}
                         </Link>
                       </div>
-                      <p className="text-sm">Katedra: {thesis.fieldOfStudy.name}</p>
+                      <p className="text-sm">
+                        Katedra: {thesis.fieldOfStudy.name}
+                      </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {thesis.createdAt}
                       </p>

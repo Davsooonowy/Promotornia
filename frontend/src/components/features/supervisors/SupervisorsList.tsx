@@ -67,7 +67,7 @@ export default function SupervisorsList({
         if (!response.ok) throw new Error("Nie udało się pobrać promotorów")
         const data = await response.json()
 
-        const mappedSupervisors = data.supervisors.map((supervisor: any) => ({
+        const mappedSupervisors = data.supervisors.map((supervisor) => ({
           id: supervisor.id,
           name: `${supervisor.title} ${supervisor.first_name} ${supervisor.last_name}`,
           email: supervisor.email,
@@ -88,7 +88,6 @@ export default function SupervisorsList({
 
     fetchSupervisors()
   }, [searchQuery, fieldOfStudy, showOnlyWithSlots, currentPage])
-
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -142,9 +141,7 @@ export default function SupervisorsList({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Informatyka</SelectItem>
-                    <SelectItem value="2">
-                      Cyberbezpieczeństwo
-                    </SelectItem>
+                    <SelectItem value="2">Cyberbezpieczeństwo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

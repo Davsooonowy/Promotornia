@@ -72,6 +72,7 @@ export default function Thesis() {
         supervisor: data.owner.first_name + " " + data.owner.last_name,
         supervisorId: data.owner.id,
         status: data.status,
+        createdAt: data.created_at,
         reservedBy: data.producer
           ? {
               id: data.producer.id,
@@ -191,6 +192,7 @@ export default function Thesis() {
   const thesisMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
+      if (!thesis) throw new Error("Nie znaleziono pracy.")
       const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
         method: "PUT",
         headers: {

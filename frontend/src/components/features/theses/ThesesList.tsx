@@ -50,7 +50,6 @@ export default function ThesesList({
   canEdit = false,
   canReserve = false,
   currentUserId,
-  filterBySupervisor,
 }: ThesesListProps) {
   const router = useRouter()
 
