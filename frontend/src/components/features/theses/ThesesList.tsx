@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
-import { FieldOfStudy, ThesisDetails} from "@/util/types";
+import { Tag, ThesisDetails } from "@/util/types"
 
 export interface ThesesListProps {
   basePath: string
@@ -73,20 +73,21 @@ export default function ThesesList({
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(
-    `${apiUrl}/thesis/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&tags=${selectedTags.join(",")}&available=${statusFilter || ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
+          `${apiUrl}/thesis/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&tags=${selectedTags.join(",")}&available=${statusFilter || ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
           {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-          }
+          },
         )
 
-        if (!response.ok) throw new Error("Failed to fetch theses")
+        if (!response.ok)
+          throw new Error("Wyszukiwanie tematów nie powiodło się")
         const data = await response.json()
 
-        const mappedTheses = data.theses.map((thesis: ThesisDetails) => ({
+        const mappedTheses = data.theses.map((thesis) => ({
           id: thesis.id,
           title: thesis.name,
           description: thesis.description,
@@ -108,21 +109,32 @@ export default function ThesesList({
     }
 
     fetchTheses()
-  }, [currentPage, searchQuery, fieldOfStudy, selectedTags, statusFilter, sortField, sortDirection])
+  }, [
+    currentPage,
+    searchQuery,
+    fieldOfStudy,
+    selectedTags,
+    statusFilter,
+    sortField,
+    sortDirection,
+  ])
 
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(`${apiUrl}/all_supervisor_interest_tags/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${apiUrl}/all_supervisor_interest_tags/`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        })
+        )
 
-        if (!response.ok) throw new Error("Failed to fetch tags")
+        if (!response.ok) throw new Error("Nie udało się pobrać tagów")
         const data = await response.json()
         setAllTags(data.tags)
       } catch (error) {
@@ -141,7 +153,7 @@ export default function ThesesList({
 
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-  const totalPages = Math.ceil(theses?.length | 0 / itemsPerPage)
+  const totalPages = Math.ceil(theses?.length | (0 / itemsPerPage))
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -206,9 +218,7 @@ export default function ThesesList({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Informatyka</SelectItem>
-                    <SelectItem value="2">
-                      Cyberbezpieczeństwo
-                    </SelectItem>
+                    <SelectItem value="2">Cyberbezpieczeństwo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

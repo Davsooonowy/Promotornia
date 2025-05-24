@@ -23,7 +23,6 @@ const PasswordFormDataSchema = z
 
 type LoginFormData = z.infer<typeof LoginFormDataSchema>
 
-type PasswordFormData = z.infer<typeof PasswordFormDataSchema>
 
 interface JwtPayload {
   user_id: number
@@ -39,19 +38,10 @@ type NewUser = z.infer<typeof NewUserScheme> & {
   emailError: string | null
 }
 
-// interface NewUser {
-//   key: number
-//   email: string
-// }
-
 interface FieldOfStudy {
   id: number
   name: string
   description: string
-}
-
-interface ServerMessageResponse {
-  message: string
 }
 
 export interface Tag {
@@ -95,7 +85,6 @@ interface Supervisor {
   specialization: string
   availableSlots: number
   totalSlots: number
-  tags: string[]
 }
 
 export type {
@@ -104,8 +93,6 @@ export type {
   JwtPayload,
   NewUser,
   FieldOfStudy,
-  ServerMessageResponse,
-  PasswordFormData,
   Supervisor,
   ThesisStatus,
   ThesisDetails,

@@ -1,6 +1,3 @@
-import { ThesisDetails } from "./types"
-import { FieldOfStudy } from "./types"
-
 export interface Supervisor {
   id: number
   name: string
@@ -10,19 +7,6 @@ export interface Supervisor {
   availableSlots: number
   totalSlots: number
   tags: string[]
-}
-
-export interface Thesis {
-  id: number
-  title: string
-  promoter: string
-  promoterId: number
-  department: string
-  status: "Dostępny" | "Zarezerwowany"
-  isPublic: boolean
-  tags: string[]
-  reservedBy: string | null
-  createdAt: string
 }
 
 export const mockSupervisors: Supervisor[] = [
@@ -107,111 +91,3 @@ export const mockSupervisors: Supervisor[] = [
     tags: ["HCI", "UX/UI", "Accessibility"],
   },
 ]
-
-export const mockTheses: Thesis[] = [
-  {
-    id: 1,
-    title: "Analiza algorytmów uczenia maszynowego w detekcji cyberataków",
-    promoter: "dr inż. Katarzyna Kowalska",
-    promoterId: 1,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Dostępny",
-    isPublic: true,
-    tags: ["AI", "Cyberbezpieczeństwo", "ML"],
-    reservedBy: null,
-    createdAt: "2023-05-15",
-  },
-  {
-    id: 2,
-    title:
-      "Implementacja i analiza wydajności algorytmów kryptograficznych w systemach IoT",
-    promoter: "prof. dr hab. Jan Nowak",
-    promoterId: 2,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Zarezerwowany",
-    isPublic: true,
-    tags: ["IoT", "Kryptografia", "Bezpieczeństwo"],
-    reservedBy: "Anna Kowalczyk",
-    createdAt: "2023-04-20",
-  },
-  {
-    id: 3,
-    title:
-      "Projektowanie responsywnych interfejsów użytkownika z wykorzystaniem React i TailwindCSS",
-    promoter: "dr Tomasz Wiśniewski",
-    promoterId: 3,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Dostępny",
-    isPublic: false,
-    tags: ["Frontend", "React", "UI/UX"],
-    reservedBy: null,
-    createdAt: "2023-06-10",
-  },
-  {
-    id: 4,
-    title: "Analiza i implementacja systemów rekomendacyjnych w e-commerce",
-    promoter: "dr hab. Anna Malinowska",
-    promoterId: 4,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Dostępny",
-    isPublic: true,
-    tags: ["E-commerce", "Recommendation Systems", "Data Mining"],
-    reservedBy: null,
-    createdAt: "2023-05-05",
-  },
-  {
-    id: 5,
-    title: "Zastosowanie blockchain w systemach zarządzania łańcuchem dostaw",
-    promoter: "prof. dr hab. Piotr Kowalczyk",
-    promoterId: 5,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Zarezerwowany",
-    isPublic: true,
-    tags: ["Blockchain", "Supply Chain", "Distributed Systems"],
-    reservedBy: "Michał Nowak",
-    createdAt: "2023-03-15",
-  },
-  {
-    id: 6,
-    title:
-      "Metody detekcji anomalii w sieciach komputerowych z wykorzystaniem uczenia maszynowego",
-    promoter: "dr inż. Magdalena Nowakowska",
-    promoterId: 6,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Dostępny",
-    isPublic: true,
-    tags: ["Network Security", "Anomaly Detection", "Machine Learning"],
-    reservedBy: null,
-    createdAt: "2023-06-20",
-  },
-  {
-    id: 7,
-    title:
-      "Optymalizacja wydajności aplikacji webowych z wykorzystaniem technik Progressive Web App",
-    promoter: "dr hab. Krzysztof Adamski",
-    promoterId: 7,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Zarezerwowany",
-    isPublic: true,
-    tags: ["Web Development", "PWA", "Performance Optimization"],
-    reservedBy: "Karolina Wiśniewska",
-    createdAt: "2023-04-10",
-  },
-  {
-    id: 8,
-    title:
-      "Projektowanie i implementacja systemów rozpoznawania mowy dla języka polskiego",
-    promoter: "dr Joanna Kamińska",
-    promoterId: 8,
-    department: "Katedra Informatyki/Cyberbezpieczeństwo",
-    status: "Dostępny",
-    isPublic: true,
-    tags: ["Speech Recognition", "NLP", "Polish Language"],
-    reservedBy: null,
-    createdAt: "2023-05-25",
-  },
-]
-
-export const getTagsFromTheses = (theses: Thesis[]): string[] => {
-  return Array.from(new Set(theses.flatMap((thesis) => thesis.tags)))
-}

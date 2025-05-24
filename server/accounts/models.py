@@ -42,6 +42,7 @@ class SystemUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
 
     description = models.TextField(null=True, blank=True)
+    total_spots = models.PositiveIntegerField(default=0)
 
     title = models.CharField(
         max_length=20,

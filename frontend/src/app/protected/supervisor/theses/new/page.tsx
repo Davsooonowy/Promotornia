@@ -1,39 +1,38 @@
 "use client"
 
 import { useMutation } from "@tanstack/react-query"
-//import apiUrl from "@/util/apiUrl"
-//import useDecodeToken from "@/hooks/useDecodeToken"
+import apiUrl from "@/util/apiUrl"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export default function New() {
   const router = useRouter()
-  //const { token } = useDecodeToken()
   const [shouldMutate, setShouldMutate] = useState(true)
   const [pageContentText, setPageContentText] = useState("Tworzę nową pracę")
 
   const newThesisMutation = useMutation({
     mutationFn: async () => {
-      // const response = await fetch(`${apiUrl}/theses/new`, {
-      //   method: "GET",
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     "Content-Type": "application/json",
-      //   },
-      // })
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/thesis/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({formData})
+      })
 
-      // if (!response.ok) {
-      //   throw new Error()
-      // }
+      if (!response.ok) {
+        throw new Error("Nie udało się utworzyć nowej pracy.")
+      }
 
-      // const data = await response.json()
+      const data = await response.json()
 
-      // const thesisId = data.id
+      const thesisId = data.id
 
-      // if (!thesisId) throw new Error()
+      if (!thesisId) throw new Error()
 
-      // return thesisId
-      return 1
+      return thesisId
     },
     onError: () => {
       setPageContentText("Błąd. Przekierowuję do profilu.")

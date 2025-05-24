@@ -122,7 +122,6 @@ class ThesisListView(APIView):
         return Response({"theses": data}, status=status.HTTP_200_OK)
 
 class SupervisorListView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -139,14 +138,10 @@ class SupervisorListView(APIView):
         objects = account_models.SystemUser.objects.filter(is_supervisor=True)
 
         non_hidden = [stat for stat in THESIS_STATUSES if stat != 'Ukryty']
-        print(non_hidden)
         taken = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         objects = objects.annotate(
             full_name=Concat(F('first_name'), Value(' '), F('last_name')),
-            total_spots=Count(
-                'owned_theses',
-                filter=Q(owned_theses__status__in=non_hidden)
-            ),
+            total_spots=F('total_spots'),
             taken_spots=Count(
                 'owned_theses',
                 filter=Q(owned_theses__status__in=taken)
@@ -203,3 +198,48 @@ class TagView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         tag = serializer.save()
         return Response(serializers.TagSerializer(tag).data, status=status.HTTP_201_CREATED)
+
+class SupervisorThesesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, supervisor_id):
+        supervisor = account_models.SystemUser.objects.filter(
+            id=supervisor_id, is_supervisor=True
+        ).first()
+        if not supervisor:
+            return Response(
+                {"error": "Supervisor not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        theses = models.Thesis.objects.filter(owner=supervisor).annotate(
+            full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
+        )
+
+        paginator = PageNumberPagination()
+        paginator.page_size = ITEMS_PER_PAGE
+        paginated_theses = paginator.paginate_queryset(theses, request)
+
+        data = serializers.ThesisSerializer(paginated_theses, many=True).data
+
+        for record in data:
+            record.pop('description', None)
+            record.pop('prerequisites', None)
+            record['field_of_study'].pop('description', None)
+            record.pop('producer', None)
+
+        return Response({"theses": data}, status=status.HTTP_200_OK)
+
+class SupervisorDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, supervisor_id):
+        supervisor = account_models.SystemUser.objects.filter(
+            id=supervisor_id, is_supervisor=True
+        ).first()
+        if not supervisor:
+            return Response(
+                {"error": "Supervisor not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        data = account_serializers.SupervisorSerializer(supervisor).data
+        return Response(data, status=status.HTTP_200_OK)
