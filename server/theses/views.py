@@ -16,14 +16,13 @@ from accounts import serializers as account_serializers
 from accounts import models as account_models
 
 import os
-from utils.camelize import camelize
 
 ITEMS_PER_PAGE = os.getenv('ITEMS_PER_PAGE')
 THESIS_STATUSES = os.getenv('THESIS_STATUSES').split(',')
 
 class ThesisView(APIView):
 
-    permission_classes = [account_permissions.IsSupervisor]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = serializers.CreateThesisSerializer(data=request.data, context={"user": request.user})
@@ -37,10 +36,8 @@ class ThesisView(APIView):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
             thesis = thesis[0]
-            if thesis.owner != request.user:
-                return Response(status=status.HTTP_403_FORBIDDEN)
             resp = serializers.ThesisSerializer(thesis).data
-            return Response(camelize(resp), status=status.HTTP_200_OK)
+            return Response(resp, status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, thesis_id):
@@ -51,6 +48,18 @@ class ThesisView(APIView):
                 return Response(status=status.HTTP_403_FORBIDDEN)
             thesis.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, thesis_id):
+        thesis = models.Thesis.objects.filter(id=thesis_id)
+        if thesis.count() > 0:
+            thesis = thesis[0]
+            serializer = serializers.UpdateThesisSerializer(thesis, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_200_OK)
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
 class ThesisListView(APIView):
@@ -103,7 +112,7 @@ class ThesisListView(APIView):
             record['field_of_study'].pop('description', None)
             record.pop('producer', None)
 
-        return Response({"theses": camelize(data)}, status=status.HTTP_200_OK)
+        return Response({"theses": data}, status=status.HTTP_200_OK)
 
 class SupervisorListView(APIView):
 
@@ -164,7 +173,7 @@ class SupervisorListView(APIView):
             for field in record['field_of_study']:
                 field.pop('description', None)
 
-        return Response({"supervisors": camelize(data)}, status=status.HTTP_200_OK)
+        return Response({"supervisors": data}, status=status.HTTP_200_OK)
 
 class TagListView(APIView):
 

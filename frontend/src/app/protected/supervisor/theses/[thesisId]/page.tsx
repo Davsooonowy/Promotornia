@@ -1,10 +1,8 @@
 "use client"
 import { useParams } from "next/navigation"
-import { mockThesesDetails } from "@/util/mockData"
 import { useMutation } from "@tanstack/react-query"
 import { useState, useEffect } from "react"
 import apiUrl from "@/util/apiUrl"
-import useDecodeToken from "@/hooks/useDecodeToken"
 import { Label } from "@/components/ui/label"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import EditThesisTextContentDialog from "@/components/features/thesis/EditThesisTextContentsDialog"
 import EditThesisTagsDialog from "@/components/features/thesis/EditThesisTagsDialog"
 import { toast } from "sonner"
-import { mockFieldsOfStudy } from "@/util/mockData"
 import EditThesisStatusDialog from "@/components/features/thesis/EditThesisStatusDialog"
 import EditFieldOfStudyDialog from "@/components/features/thesis/EditFieldOfStudyDialog"
 
@@ -36,7 +33,7 @@ export default function Thesis() {
   const [shouldFetchAllTags, setShouldFetchAllTags] = useState(true)
 
   const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[] | null>(
-    mockFieldsOfStudy,
+    null,
   )
   const [fieldsOfStudyFetchError, setFieldsOfStudyFetchError] = useState<
     string | null
@@ -48,67 +45,70 @@ export default function Thesis() {
     string | null
   >(null)
 
-  const { token } = useDecodeToken()
-
   const thesisFetch = useMutation({
     mutationFn: async () => {
-      // const response = await fetch(`${apiUrl}/theses/${numericThesisId}`, {
-      //   method: "GET",
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     "Content-Type": "application/json",
-      //   },
-      // })
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-      // if (!response.ok) {
-      //   throw new Error("Nie znaleziono pracy.")
-      // }
-
-      // const data = await response.json()
-
-      // const theThesis = data.thesis
-
-      const theThesis = mockThesesDetails.find(
-        (mockThesis) => mockThesis.id === numericThesisId,
-      )
-      if (!theThesis) {
+      if (!response.ok) {
         throw new Error("Nie znaleziono pracy.")
       }
-      return theThesis
+
+      const data = await response.json()
+
+      const thesis: ThesisDetails = {
+        id: data.id,
+        title: data.name,
+        description: data.description,
+        prerequisitesDescription: data.prerequisites,
+        fieldOfStudy: data.field_of_study,
+        tags: data.tags,
+        supervisor: data.owner.first_name + " " + data.owner.last_name,
+        supervisorId: data.owner.id,
+        status: data.status,
+        reservedBy: data.producer
+          ? {
+              id: data.producer.id,
+              name: data.producer.first_name,
+              surname: data.producer.last_name,
+              email: data.producer.email,
+            }
+          : null,
+      }
+
+      return thesis
     },
     onError: (e) => {
       setThesisFetchError(e.message)
     },
-    onSuccess: (theThesis) => {
-      setThesis(theThesis)
+    onSuccess: (thesis) => {
+      setThesis(thesis)
     },
   })
 
   const allTagsFetch = useMutation({
     mutationFn: async () => {
-      // const response = await fetch(`${apiUrl}/all_theses_tags`, {
-      //   method: "GET",
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //     "Content-Type": "application/json",
-      //   },
-      // })
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/all_supervisor_interest_tags/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-      // if (!response.ok) {
-      //   throw new Error("Nie udało się pobrać tagów.")
-      // }
+      if (!response.ok) {
+        throw new Error("Nie udało się pobrać tagów.")
+      }
 
-      // const data = await response.json()
-
-      // const tags = data.tags
-
-      const tags: Tag[] = [
-        { id: 1, name: "Cyberbezpieczeństwo" },
-        { id: 2, name: "Uczenie maszynowe" },
-        { id: 3, name: "Algorytmy" },
-      ]
-
-      return tags
+      const data = await response.json()
+      return data.tags
     },
     onError: (e) => {
       setAllTagsFetchError(e.message)
@@ -120,22 +120,20 @@ export default function Thesis() {
 
   const allFieldsOfStudyFetch = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/field_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       })
-
       if (!response.ok) {
         throw new Error("Nie udało się załadować dostępnych kierunków studiów.")
       }
 
       const data = await response.json()
-
-      const allFieldsOfStudy = data.fieldsOfStudy
-      return allFieldsOfStudy
+      return data
     },
     onError: (e) => {
       setFieldsOfStudyFetchError(e.message)
@@ -192,9 +190,8 @@ export default function Thesis() {
 
   const thesisMutation = useMutation({
     mutationFn: async () => {
-      if (!thesis) return
-
-      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/edit`, {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -202,11 +199,11 @@ export default function Thesis() {
         },
         body: JSON.stringify({
           id: thesis.id,
-          title: thesis.title,
-          fieldOfStudy: thesis.fieldOfStudy,
+          name: thesis.title,
+          field_of_study: thesis.fieldOfStudy,
           description: thesis.description,
-          prerequisitesDescription: thesis.prerequisitesDescription,
-          tags: thesis.tags,
+          prerequisites: thesis.prerequisitesDescription,
+          tags: thesis.tags.map((tag) => tag.id),
         }),
       })
       if (!response.ok) {
@@ -214,7 +211,7 @@ export default function Thesis() {
       }
       const data = await response.json()
 
-      if (!data) throw new Error("Nie udało się zapisać zmian.") // !!
+      if (!data) throw new Error("Nie udało się zapisać zmian.")
     },
     onError: (e) => {
       setMutationError(e.message)

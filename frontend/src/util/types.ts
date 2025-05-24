@@ -46,7 +46,8 @@ type NewUser = z.infer<typeof NewUserScheme> & {
 
 interface FieldOfStudy {
   id: number
-  field: string
+  name: string
+  description: string
 }
 
 interface ServerMessageResponse {

@@ -83,7 +83,7 @@ class PersonalDataView(APIView):
 
 
 class FieldOfStudyView(APIView):
-    permission_classes = (IsAuthenticated, permissions.IsDean)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         fields_of_study = models.FieldOfStudy.objects.all()
