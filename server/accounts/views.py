@@ -10,7 +10,7 @@ from django.conf import settings
 from django.urls import reverse
 from .models import OneTimePasswordLink
 from django.utils.http import urlencode
-from django.db import models
+from accounts.models import SystemUser
 from django.http import HttpResponseGone
 
 from . import serializers
@@ -42,9 +42,9 @@ class DeanView(APIView):
             serializer.save()
             # mailing logic
             for user in serializer.plaintext_credentials:
-                user = models.SystemUser.objects.get(email=user["email"])
+                system_user = SystemUser.objects.get(email=user["email"])
                 otp = OneTimePasswordLink.objects.create(
-                    user=user,
+                    user=system_user,
                     plaintext_password=user["password"]
                 )
                 token = str(otp.token)
