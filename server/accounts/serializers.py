@@ -145,10 +145,9 @@ class LoginSerializer(TokenObtainPairSerializer):
         return data
 
 class FieldOfStudySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.FieldOfStudy
-        fields = '__all__'
+        fields = ('id', 'name', 'description')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -164,3 +163,12 @@ class SupervisorSerializer(serializers.ModelSerializer):
         model = models.SystemUser
         fields = ('id', 'email', 'title', 'first_name', 'last_name', 'field_of_study',
                   'free_spots', 'total_spots')
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+class PersonalDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('first_name', 'last_name', 'email')
