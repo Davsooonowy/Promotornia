@@ -13,7 +13,6 @@ from django.utils.http import urlencode
 from accounts.models import SystemUser
 from django.http import HttpResponseGone
 
-from . import serializers
 from . import permissions
 from . import serializers
 
