@@ -93,7 +93,6 @@ class DeanCreateUsersSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         users = []
-        self.plaintext_credentials = []
         for user_data in validated_data["newUsers"]:
             user_type = "is_" + validated_data["userType"]
             user_dict = {

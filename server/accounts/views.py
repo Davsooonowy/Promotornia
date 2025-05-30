@@ -10,7 +10,6 @@ from django.conf import settings
 from django.urls import reverse
 from .models import OneTimePasswordLink
 from django.utils.http import urlencode
-from accounts.models import SystemUser
 from django.http import HttpResponseGone
 from django.utils import timezone
 from datetime import timedelta
@@ -39,12 +38,11 @@ class DeanView(APIView):
     def post(self, request):
         serializer = serializers.DeanCreateUsersSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            result = serializer.save()
             # mailing logic
-            for user in serializer.plaintext_credentials:
-                system_user = SystemUser.objects.get(email=user["email"])
+            for user in result:
                 otp = OneTimePasswordLink.objects.create(
-                    user=system_user,
+                    user=user,
                     expires_at=timezone.now() + timedelta(hours=1)
                 )
                 url = request.build_absolute_uri(
@@ -54,7 +52,7 @@ class DeanView(APIView):
                     subject='Ustaw swoje hasło',
                     message=f"Otwórz link, aby ustawić hasło:\n\n{url}",
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user["email"]],
+                    recipient_list=[user.email],
                     fail_silently=False,
                 )
             return Response(status=status.HTTP_201_CREATED)
