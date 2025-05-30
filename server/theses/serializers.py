@@ -54,6 +54,7 @@ class UpdateThesisSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")
+        attrs["prerequisites"] = attrs.pop("prerequisites_description")
         field_of_study = attrs.pop("field_of_study")
         fos_id = field_of_study.get("id")
         try:
