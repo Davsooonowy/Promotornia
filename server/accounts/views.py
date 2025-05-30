@@ -15,6 +15,7 @@ from django.utils import timezone
 from datetime import timedelta
 from . import permissions, models
 from . import serializers
+import os
 
 
 class RegisterView(APIView):
@@ -45,9 +46,7 @@ class DeanView(APIView):
                     user=user,
                     expires_at=timezone.now() + timedelta(hours=1)
                 )
-                url = request.build_absolute_uri(
-                    reverse("set_password") + "?" + urlencode({"token": str(otp.token)})
-                )
+                url = f"{os.getenv('CORS_ALLOWED_ORIGINS')}/set_password?{urlencode({'token': str(otp.token)})}"
                 send_mail(
                     subject='Ustaw swoje hasło',
                     message=f"Otwórz link, aby ustawić hasło:\n\n{url}",

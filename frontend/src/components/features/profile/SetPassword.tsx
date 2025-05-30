@@ -71,7 +71,7 @@ export default function SetPassword() {
       }
 
       try {
-        const response = await fetch(`${apiUrl}/api/set-password/`, {
+        const response = await fetch(`${apiUrl}/set_password/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
