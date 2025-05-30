@@ -46,6 +46,11 @@ class UpdateThesisSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, default="")
     prerequisites_description = serializers.CharField(required=False, default="")
     tags = serializers.ListField(required=False, default=[])
+    producer = account_serializers.UserSerializer(
+        required=False,
+        default=None,
+        read_only=True
+    )
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")
@@ -155,23 +160,3 @@ class ListSupervisorsSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Nie można uporządkować danych po {order}")
 
         return attrs
-
-
-class UpdateThesisSerializer(serializers.ModelSerializer):
-    tags = serializers.ListField(
-        child=serializers.IntegerField(), write_only=True
-    )
-    owner = account_serializers.UserSerializer(read_only=True)
-    producer = account_serializers.UserSerializer(read_only=True)
-    field_of_study = account_serializers.FieldOfStudySerializer(read_only=True)
-
-    class Meta:
-        model = models.Thesis
-        fields = '__all__'
-
-    def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        if tags is not None:
-            validated_tags = validate_tags(tags)
-            instance.tags.set(validated_tags)
-        return super().update(instance, validated_data)

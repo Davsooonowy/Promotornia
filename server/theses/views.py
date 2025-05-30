@@ -65,11 +65,12 @@ class CreateThesisView(APIView):
     def get(self, request):
         thesis = models.Thesis.objects.create(
             owner=request.user,
-            name="Podaj nazwę pracy",
             description="Podaj opis pracy",
             prerequisites="Podaj opis wymagań wstępnych",
 
         )
+        thesis.name = f"Praca nr. {thesis.id}. Podaj nazwę pracy"
+        thesis.save()
         return Response({"id": thesis.id}, status=status.HTTP_200_OK)
 
 class ThesisListView(APIView):
