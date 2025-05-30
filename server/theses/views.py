@@ -1,3 +1,4 @@
+from humps.main import decamelize
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -25,14 +26,6 @@ class ThesisView(APIView):
 
     permission_classes = [account_permissions.IsSupervisor]
 
-    def post(self, request):
-        serializer = serializers.CreateThesisSerializer(data=request.data, context={"user": request.user})
-        if serializer.is_valid():
-            thesis = serializer.save()
-            return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def get(self, request, thesis_id):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
@@ -43,6 +36,22 @@ class ThesisView(APIView):
             return Response(camelize(resp), status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
+    def put(self, request, thesis_id):
+        try:
+            thesis = models.Thesis.objects.get(id=thesis_id)
+        except models.Thesis.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = serializers.UpdateThesisSerializer(
+            instance=thesis,
+            data=decamelize(request.data),
+            context={"user": request.user}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, thesis_id):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
@@ -52,6 +61,19 @@ class ThesisView(APIView):
             thesis.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+class CreateThesisView(APIView):
+    permission_classes = [account_permissions.IsSupervisor]
+
+    def get(self, request):
+        thesis = models.Thesis.objects.create(
+            owner=request.user,
+            name="Podaj nazwę pracy",
+            description="Podaj opis pracy",
+            prerequisites="Podaj opis wymagań wstępnych",
+
+        )
+        return Response({"id": thesis.id}, status=status.HTTP_200_OK)
 
 class ThesisListView(APIView):
 

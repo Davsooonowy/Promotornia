@@ -10,7 +10,7 @@ class Thesis(models.Model):
     name = models.CharField(
         max_length=255,
         unique=True,
-        default=None
+        default=''
     )
     description = models.TextField(
         blank=True,
@@ -38,7 +38,9 @@ class Thesis(models.Model):
     )
     field_of_study = models.ForeignKey(
         account_models.FieldOfStudy,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
     )
     tags = models.ManyToManyField(Tag)
     date_of_creation = models.DateTimeField(default=timezone.now)

@@ -10,4 +10,6 @@ urlpatterns = [
     path('supervisors/list/', views.SupervisorListView.as_view(), name='supervisors-list'),
     path('all_supervisor_interest_tags/', views.TagListView.as_view(), name='all_supervisor_interest_tags'),
     path('supervisor/tags/', views.TagView.as_view(), name='supervisor_tags'),
+    path('thesis/new/', views.CreateThesisView.as_view(), name='thesis-nes'),
+    path('theses/<int:thesis_id>/edit/', views.ThesisView.as_view(), name='thesis-edit'),
 ]

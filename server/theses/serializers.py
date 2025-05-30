@@ -40,47 +40,53 @@ class ThesisSerializer(serializers.ModelSerializer):
         model = models.Thesis
         fields = '__all__'
 
-class CreateThesisSerializer(serializers.Serializer):
-
-    name = serializers.CharField(max_length=255)
-    description = serializers.CharField()
-    tags = serializers.ListField(default=[])
-    producer = serializers.EmailField(default=None)
-    field_of_study = serializers.IntegerField()
+class UpdateThesisSerializer(serializers.Serializer):
+    title = serializers.CharField(required=False, default="")
+    field_of_study = serializers.DictField(required=False, default={})
+    description = serializers.CharField(required=False, default="")
+    prerequisites_description = serializers.CharField(required=False, default="")
+    tags = serializers.ListField(required=False, default=[])
 
     def validate(self, attrs):
-        producer_email = attrs.get('producer')
+        attrs["name"] = attrs.pop("title")
+        field_of_study = attrs.pop("field_of_study")
+        fos_id = field_of_study.get("id")
+        try:
+            conflict = models.Thesis.objects.get(
+                name=attrs["name"]
+            )
+            if conflict.id != self.instance.id:
+                raise serializers.ValidationError("Praca z daną nazwą już istnieje")
+        except models.Thesis.DoesNotExist:
+            pass
 
-        if producer_email is not None:
+        if fos_id is not None:
             try:
-                producer = account_models.SystemUser.objects.get(
-                    email=producer_email,
-                    is_student=True
+                field_of_study = account_models.FieldOfStudy.objects.get(
+                    id=fos_id,
+                    systemuser__in=[self.context["user"]]
                 )
+            except account_models.FieldOfStudy.DoesNotExist:
+                raise serializers.ValidationError(f"Błędny identyfikator kierunku: {fos_id}")
+            attrs["field_of_study"] = field_of_study
 
-                attrs['producer'] = producer
-            except account_models.SystemUser.DoesNotExist:
-                raise serializers.ValidationError("Podany student nie istnieje")
-
-        user: account_models.SystemUser = self.context['user']
-        field_of_study_id = attrs.get('field_of_study')
-        if not user.field_of_study.filter(id=field_of_study_id).exists():
-            raise serializers.ValidationError(f"ID kierunku {field_of_study_id} nie jest przypisane do Ciebie")
-        field_of_study = account_models.FieldOfStudy.objects.get(id=field_of_study_id)
-        attrs['field_of_study'] = field_of_study
-
-        tag_ids = attrs.get('tags')
-        valid_tags = validate_tags(tag_ids)
-
-        attrs['tags'] = valid_tags
+        tags = attrs["tags"]
+        if all(isinstance(t, dict) for t in tags):
+            try:
+                tags = list(map(lambda t: t["id"], tags))
+            except KeyError:
+                raise serializers.ValidationError("Niepoprawny format tagów")
+        tags = validate_tags(tags)
+        attrs["tags"] = tags
         return attrs
 
-    def create(self, validated_data: dict):
-        validated_data['owner'] = self.context['user']
-        tags = validated_data.pop('tags')
-        thesis = models.Thesis.objects.create(**validated_data)
-        thesis.tags.add(*tags)
-        return thesis
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags")
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        instance.tags.set(tags)
+        return instance
 
 class ListThesesSerializer(serializers.Serializer):
     fieldOfStudy = serializers.IntegerField(default=None)
