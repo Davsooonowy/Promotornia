@@ -551,7 +551,7 @@ headers: {
 }
 
 ## Odpowiedź
-`User = {id: number, email: string, first_name: string, last_name: string}`
+`User = {id: number, email: string, first_name: string, last_name: string, title: string}`
 
 `FieldOfStudy = {id: number, name: string}`
 
