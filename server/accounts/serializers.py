@@ -69,6 +69,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             if not isinstance(user_data, dict):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
             validate_email(user_data.get('email', ''))
+            user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
@@ -94,10 +95,9 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         users = []
         for user_data in validated_data["newUsers"]:
             user_type = "is_" + validated_data["userType"]
-            password = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH))
             user_dict = {
                 "email": user_data["email"],
-                "password": make_password(password),
+                "password": user_data["password"],
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
@@ -105,7 +105,6 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             add_result = models.SystemUser.objects.bulk_create(users)
             for user in add_result:
                 user.field_of_study.add(validated_data["fieldOfStudy"]["id"])
-
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
@@ -167,6 +166,10 @@ class SupervisorSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+
+class SetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    password  = serializers.CharField(required=True)
 
 class PersonalDataSerializer(serializers.ModelSerializer):
     class Meta:
