@@ -59,6 +59,8 @@ User = get_user_model()
 class OneTimePasswordLink(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    plaintext_password = models.CharField(max_length=128)
     created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
+    def is_expired(self):
+        return timezone.now() > self.expires_at

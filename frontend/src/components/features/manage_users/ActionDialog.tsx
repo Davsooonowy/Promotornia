@@ -56,7 +56,7 @@ export default function ActionDialog(props: {
 
       const data = await response.json()
 
-      const allFieldsOfStudy = data.fieldsOfStudy
+      const allFieldsOfStudy = data
       return allFieldsOfStudy
     },
     onError: (e) => {
@@ -68,84 +68,11 @@ export default function ActionDialog(props: {
   })
 
   useEffect(() => {
-    if (shouldFetchFieldsOfStudy) {
+    if (shouldFetchFieldsOfStudy && props.action === "addUsers") {
       allFieldsOfStudyFetch.mutate()
       setShouldFetchFieldsOfStudy(false)
     }
-  }, [shouldFetchFieldsOfStudy, allFieldsOfStudyFetch])
-
-  const getDialogContent = () => {
-    switch (props.action) {
-      case "addUsers":
-        return (
-          <div className="space-y-4">
-            <Label>
-              Data wygaśnięcia kont: {props.expirationDate.toLocaleDateString()}
-            </Label>
-            <Calendar
-              mode="single"
-              selected={props.expirationDate}
-              onSelect={(date) => {
-                if (date) props.setExpirationDate(date)
-              }}
-              className="rounded-md border"
-            />
-
-            <Label>Kierunek studiów: </Label>
-            <Select
-              onValueChange={(value) =>
-                props.setFieldOfStudy(JSON.parse(value))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    props.fieldOfStudy
-                      ? props.fieldOfStudy.name
-                      : "Wybierz kierunek"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {fieldsOfStudy.map((fieldOfStudy) => (
-                  <SelectItem
-                    key={fieldOfStudy.id}
-                    value={JSON.stringify({
-                      id: fieldOfStudy.id,
-                      name: fieldOfStudy.name,
-                    })}
-                  >
-                    {fieldOfStudy.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {fieldsOfStudyFetchError && (
-              <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
-            )}
-            <div className="flex w-full justify-end">
-              <Button
-                className="cursor-pointer"
-                onClick={() => props.actionMutation.mutate()}
-              >
-                Zatwierdź
-              </Button>
-            </div>
-          </div>
-        )
-      case "deleteUsers":
-        return (
-          <div className="flex w-full justify-end">
-            <Button
-              className="cursor-pointer"
-              onClick={() => props.actionMutation.mutate()}
-            >
-              Zatwierdź
-            </Button>
-          </div>
-        )
-    }
-  }
+  }, [shouldFetchFieldsOfStudy, allFieldsOfStudyFetch, props.action])
 
   return (
     <Dialog>
@@ -182,7 +109,78 @@ export default function ActionDialog(props: {
             </SelectItem>
           </SelectContent>
         </Select>
-        {getDialogContent()}
+        {props.action === "addUsers" && (
+          <div className="space-y-4">
+            <Label>
+              Data wygaśnięcia kont: {props.expirationDate.toLocaleDateString()}
+            </Label>
+            <Calendar
+              mode="single"
+              selected={props.expirationDate}
+              onSelect={(date) => {
+                if (date) props.setExpirationDate(date)
+              }}
+              className="rounded-md border"
+            />
+
+            <Label>Kierunek studiów: </Label>
+            {fieldsOfStudy ? (
+              <Select
+                key={fieldsOfStudy?.length}
+                onValueChange={(value) =>
+                  props.setFieldOfStudy(JSON.parse(value))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      props.fieldOfStudy
+                        ? props.fieldOfStudy.name
+                        : "Wybierz kierunek"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {fieldsOfStudy.map((fieldOfStudy) => (
+                    <SelectItem
+                      key={fieldOfStudy.id}
+                      value={JSON.stringify({
+                        id: fieldOfStudy.id,
+                        name: fieldOfStudy.name,
+                      })}
+                    >
+                      {fieldOfStudy.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              "Wczytywanie..."
+            )}
+            {fieldsOfStudyFetchError && (
+              <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
+            )}
+            <div className="flex w-full justify-end">
+              <Button
+                className="cursor-pointer"
+                onClick={() => props.actionMutation.mutate()}
+              >
+                Zatwierdź
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {props.action === "deleteUsers" && (
+          <div className="flex w-full justify-end">
+            <Button
+              className="cursor-pointer"
+              onClick={() => props.actionMutation.mutate()}
+            >
+              Zatwierdź
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
