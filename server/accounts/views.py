@@ -12,6 +12,8 @@ from .models import OneTimePasswordLink
 from django.utils.http import urlencode
 from accounts.models import SystemUser
 from django.http import HttpResponseGone
+from django.utils import timezone
+from datetime import timedelta
 from . import permissions, models
 from . import serializers
 
@@ -43,15 +45,14 @@ class DeanView(APIView):
                 system_user = SystemUser.objects.get(email=user["email"])
                 otp = OneTimePasswordLink.objects.create(
                     user=system_user,
-                    plaintext_password=user["password"]
+                    expires_at=timezone.now() + timedelta(hours=1)
                 )
-                token = str(otp.token)
                 url = request.build_absolute_uri(
-                    reverse("view_password") + "?" + urlencode({"token": token})
+                    reverse("set_password") + "?" + urlencode({"token": str(otp.token)})
                 )
                 send_mail(
-                    subject='Twoje konto zostało utworzone',
-                    message=f"Otwórz swój jednorazowy link, aby zobaczyć swoje hasło:\n\n{url}",
+                    subject='Ustaw swoje hasło',
+                    message=f"Otwórz link, aby ustawić hasło:\n\n{url}",
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user["email"]],
                     fail_silently=False,
@@ -79,11 +80,35 @@ class OneTimePasswordView(APIView):
             link = OneTimePasswordLink.objects.get(token=token, used=False)
         except OneTimePasswordLink.DoesNotExist:
             return HttpResponseGone("Ten link wygasł lub został już użyty.")
+        
+        if link.is_expired():
+                return HttpResponseGone("Ten link wygasł.")
 
-        password = link.plaintext_password
-        link.used = True
-        link.save()
-        return Response({"email": link.user.email, "password": password}, status=status.HTTP_200_OK)
+        return Response({"email": link.user.email}, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        serializer = SetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            token = serializer.validated_data['token']
+            password = serializer.validated_data['password']
+            try:
+                link = OneTimePasswordLink.objects.get(token=token, used=False)
+            except OneTimePasswordLink.DoesNotExist:
+                return HttpResponseGone("Ten link wygasł lub został już użyty.")
+
+            if link.is_expired():
+                return HttpResponseGone("Ten link wygasł.")
+
+            user = link.user
+            user.set_password(password)
+            user.save()
+
+            link.used = True
+            link.save()
+
+            return Response({"message": "Hasło zostało ustawione pomyślnie."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ChangePasswordView(APIView):

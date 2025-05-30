@@ -69,7 +69,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             if not isinstance(user_data, dict):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
             validate_email(user_data.get('email', ''))
-            user_data["password"] = ''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH))
+            user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
@@ -98,14 +98,10 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             user_type = "is_" + validated_data["userType"]
             user_dict = {
                 "email": user_data["email"],
-                "password": make_password(user_data["password"]),
+                "password": user_data["password"],
                 user_type: True
             }
             users.append(models.SystemUser(**user_dict))
-            self.plaintext_credentials.append({
-                "email": user_data["email"],
-                "password": user_data["password"]
-            })
         with transaction.atomic():
             add_result = models.SystemUser.objects.bulk_create(users)
             for user in add_result:
@@ -171,6 +167,10 @@ class SupervisorSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+
+class SetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    password  = serializers.CharField(required=True)
 
 class PersonalDataSerializer(serializers.ModelSerializer):
     class Meta:
