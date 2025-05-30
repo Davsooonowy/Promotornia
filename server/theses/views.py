@@ -40,11 +40,12 @@ class ThesisView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         data = decamelize(request.data)
+        print(thesis.status.lower())
         if (
             thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
-            (thesis.status.lower() == "ukryty" and data.get("field_of_study") is not None)
+            (thesis.status.lower() != "ukryty" and data.get("field_of_study") is not None)
         ):
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
 
 
         serializer = serializers.UpdateThesisSerializer(
