@@ -33,7 +33,7 @@ export default function ChangePersonalData() {
     queryKey: ["personalData"],
     queryFn: async () => {
       try {
-        const response = await fetch(`${apiUrl}/user/personal_data`, {
+        const response = await fetch(`${apiUrl}/user/personal_data/`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,15 +77,15 @@ export default function ChangePersonalData() {
   const personalDataMutation = useMutation({
     mutationFn: async () => {
       try {
-        const response = await fetch(`${apiUrl}/user/edit_personal_data`, {
+        const response = await fetch(`${apiUrl}/user/personal_data/`, {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: name.current,
-            surname: surname.current,
+            first_name: name.current,
+            last_name: surname.current,
           }),
         })
 

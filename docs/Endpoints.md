@@ -99,7 +99,7 @@ Authorization: "Bearer TUTAJ_TOKEN",
 | surname | string | Tak      | Nazwisko |
 | email   | string | Tak      | Email    |
 
-# Endpoint PUT /user/edit_personal_data
+# Endpoint PUT /user/personal_data
 
 **Opis:**
 Zmodyfikuj obecne dane usera
@@ -379,7 +379,7 @@ type ThesisStatus =
 
 Status może się zmienić:
 
-- z "Ukryty" na dostępny i na odwrót (1)
+- z "Ukryty" na dostępny i na odwrót lub z "Zarezerwowany" na "Ukryty" (1)
 - z "Dostępny" na "Zarezerwowany" (2)
 - z "Zarezerwowany" na "Student zaakceptowany" (3)
 - z "Student zaakceptowany" na "Zatwierdzony" (4)
@@ -410,11 +410,13 @@ Authorization: `Bearer ${token}`,
 "Content-Type": "application/json",
 }
 
-## Odpowiedź
+Przykładowy json:
 
-| Nazwa  | Typ    | Wymagany | Opis                       |
-|--------|--------|----------|----------------------------|
-| email     | string    | Tak      | Obecny e-mail usera   |
+```json
+{
+  "id": 100
+}
+```
 
 # Endpoint GET /thesis/list?page&fieldOfStudy&tags&available&order&ascending&search
 
@@ -496,13 +498,7 @@ headers: {
 | Nazwa  | Typ    | Wymagany | Opis                       | Default |
 |--------|--------|----------|----------------------------|---------|
 | name | string | tak | Nazwa tagu | - |
-Przykładowy json:
 
-```json
-{
-  "id": 100
-}
-```
 
 # Endpoint PUT /theses/{thesisId}/edit
 

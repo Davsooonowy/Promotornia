@@ -19,8 +19,6 @@ import { FieldOfStudy } from "@/util/types"
 import { useMutation, UseMutationResult } from "@tanstack/react-query"
 import { useState, useEffect } from "react"
 import apiUrl from "@/util/apiUrl"
-import useDecodeToken from "@/hooks/useDecodeToken"
-import { mockFieldsOfStudy } from "@/util/mockData"
 
 export default function ActionDialog(props: {
   actionToLabel: Map<string, string>
@@ -33,17 +31,18 @@ export default function ActionDialog(props: {
   fieldOfStudy: FieldOfStudy | null
   actionMutation: UseMutationResult<void, Error, void, unknown>
 }) {
-  const [fieldsOfStudy, setFieldsOfStudy] = useState(mockFieldsOfStudy)
+  const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[] | null>(
+    null,
+  )
   const [fieldsOfStudyFetchError, setFieldsOfStudyFetchError] = useState<
     string | null
   >(null)
   const [shouldFetchFieldsOfStudy, setShouldFetchFieldsOfStudy] = useState(true)
 
-  const { token } = useDecodeToken()
-
   const allFieldsOfStudyFetch = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${apiUrl}/fieldsOfStudy`, {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/field_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,7 +56,7 @@ export default function ActionDialog(props: {
 
       const data = await response.json()
 
-      const allFieldsOfStudy = data.fieldsOfStudy
+      const allFieldsOfStudy = data
       return allFieldsOfStudy
     },
     onError: (e) => {
@@ -69,84 +68,11 @@ export default function ActionDialog(props: {
   })
 
   useEffect(() => {
-    if (shouldFetchFieldsOfStudy) {
+    if (shouldFetchFieldsOfStudy && props.action === "addUsers") {
       allFieldsOfStudyFetch.mutate()
       setShouldFetchFieldsOfStudy(false)
     }
-  }, [shouldFetchFieldsOfStudy, allFieldsOfStudyFetch])
-
-  const getDialogContent = () => {
-    switch (props.action) {
-      case "addUsers":
-        return (
-          <div className="space-y-4">
-            <Label>
-              Data wygaśnięcia kont: {props.expirationDate.toLocaleDateString()}
-            </Label>
-            <Calendar
-              mode="single"
-              selected={props.expirationDate}
-              onSelect={(date) => {
-                if (date) props.setExpirationDate(date)
-              }}
-              className="rounded-md border"
-            />
-
-            <Label>Kierunek studiów: </Label>
-            <Select
-              onValueChange={(value) =>
-                props.setFieldOfStudy(JSON.parse(value))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    props.fieldOfStudy
-                      ? props.fieldOfStudy.field
-                      : "Wybierz kierunek"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {fieldsOfStudy.map((fieldOfStudy) => (
-                  <SelectItem
-                    key={fieldOfStudy.id}
-                    value={JSON.stringify({
-                      id: fieldOfStudy.id,
-                      field: fieldOfStudy.field,
-                    })}
-                  >
-                    {fieldOfStudy.field}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {fieldsOfStudyFetchError && (
-              <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
-            )}
-            <div className="flex w-full justify-end">
-              <Button
-                className="cursor-pointer"
-                onClick={() => props.actionMutation.mutate()}
-              >
-                Zatwierdź
-              </Button>
-            </div>
-          </div>
-        )
-      case "deleteUsers":
-        return (
-          <div className="flex w-full justify-end">
-            <Button
-              className="cursor-pointer"
-              onClick={() => props.actionMutation.mutate()}
-            >
-              Zatwierdź
-            </Button>
-          </div>
-        )
-    }
-  }
+  }, [shouldFetchFieldsOfStudy, allFieldsOfStudyFetch, props.action])
 
   return (
     <Dialog>
@@ -183,7 +109,78 @@ export default function ActionDialog(props: {
             </SelectItem>
           </SelectContent>
         </Select>
-        {getDialogContent()}
+        {props.action === "addUsers" && (
+          <div className="space-y-4">
+            <Label>
+              Data wygaśnięcia kont: {props.expirationDate.toLocaleDateString()}
+            </Label>
+            <Calendar
+              mode="single"
+              selected={props.expirationDate}
+              onSelect={(date) => {
+                if (date) props.setExpirationDate(date)
+              }}
+              className="rounded-md border"
+            />
+
+            <Label>Kierunek studiów: </Label>
+            {fieldsOfStudy ? (
+              <Select
+                key={fieldsOfStudy?.length}
+                onValueChange={(value) =>
+                  props.setFieldOfStudy(JSON.parse(value))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      props.fieldOfStudy
+                        ? props.fieldOfStudy.name
+                        : "Wybierz kierunek"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {fieldsOfStudy.map((fieldOfStudy) => (
+                    <SelectItem
+                      key={fieldOfStudy.id}
+                      value={JSON.stringify({
+                        id: fieldOfStudy.id,
+                        name: fieldOfStudy.name,
+                      })}
+                    >
+                      {fieldOfStudy.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              "Wczytywanie..."
+            )}
+            {fieldsOfStudyFetchError && (
+              <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
+            )}
+            <div className="flex w-full justify-end">
+              <Button
+                className="cursor-pointer"
+                onClick={() => props.actionMutation.mutate()}
+              >
+                Zatwierdź
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {props.action === "deleteUsers" && (
+          <div className="flex w-full justify-end">
+            <Button
+              className="cursor-pointer"
+              onClick={() => props.actionMutation.mutate()}
+            >
+              Zatwierdź
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
