@@ -12,8 +12,7 @@ from .models import OneTimePasswordLink
 from django.utils.http import urlencode
 from accounts.models import SystemUser
 from django.http import HttpResponseGone
-
-from . import permissions
+from . import permissions, models
 from . import serializers
 
 
@@ -85,3 +84,66 @@ class OneTimePasswordView(APIView):
         link.used = True
         link.save()
         return Response({"email": link.user.email, "password": password}, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        print(request.data)
+        serializer = serializers.ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({'error': 'Invalid old password'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+
+        print(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PersonalDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = serializers.PersonalDataSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = serializers.PersonalDataSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FieldOfStudyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        fields_of_study = models.FieldOfStudy.objects.all()
+        serializer = serializers.FieldOfStudySerializer(fields_of_study, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = serializers.FieldOfStudySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        field_of_study = models.FieldOfStudy.objects.get(pk=pk)
+        serializer = serializers.FieldOfStudySerializer(field_of_study, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        field_of_study = models.FieldOfStudy.objects.get(pk=pk)
+        field_of_study.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

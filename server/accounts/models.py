@@ -23,6 +23,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, first_name, last_name, **extra_fields)
+
 class FieldOfStudy(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField()
@@ -43,6 +44,7 @@ class SystemUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(default=timezone.now)
 
     description = models.TextField(null=True, blank=True)
+    total_spots = models.PositiveIntegerField(default=0)
 
     title = models.CharField(
         max_length=20,

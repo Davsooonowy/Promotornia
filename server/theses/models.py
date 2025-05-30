@@ -42,4 +42,4 @@ class Thesis(models.Model):
     )
     tags = models.ManyToManyField(Tag)
     date_of_creation = models.DateTimeField(default=timezone.now)
-    status = models.CharField(default='Ukryty')
+    status = models.CharField(default='Ukryty', max_length=255)
