@@ -85,7 +85,7 @@ class OneTimePasswordView(APIView):
         return Response({"email": link.user.email}, status=status.HTTP_200_OK)
     
     def post(self, request):
-        serializer = SetPasswordSerializer(data=request.data)
+        serializer = serializers.SetPasswordSerializer(data=request.data)
         if serializer.is_valid():
             token = serializer.validated_data['token']
             password = serializer.validated_data['password']
