@@ -572,6 +572,12 @@ To samo co w endpoincie z listowaniem prac.
 
 # Endpoint GET /supervisors/{supervisorId}/
 
+headers: {
+  Content-Type: "application/json"
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+
 ## Odpowiedź
 
 `FieldOfStudy = {id: number, name: string, description: string}`
@@ -586,6 +592,32 @@ To samo co w endpoincie z listowaniem prac.
 | field_of_study | FieldOfStudy |          | Kierunek + wydział               |
 | free_spots     | number       |          | Liczba wolnych miejsc            |
 | total_spots    | number       |          | Liczba wolnych + zajętych miejsc |
+
+# Endpoint GET /user/fields_of_study/
+**Opis**
+
+Zwraca listę kierunków studiów, na które przypisany jest dany użytkownik
+
+headers: {
+  Content-Type: "application/json"
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Odpowiedź
+```json
+{
+  "fields_of_study": [
+    {
+      "id": 1,
+      "field": "Informatyka"
+    },
+    {
+      "id": 2,
+      "field": "Cyberbezpieczeństwo"
+    }
+  ]
+}
+```
 
 # Endpoint DELETE /theses/{thesisId}/
 
