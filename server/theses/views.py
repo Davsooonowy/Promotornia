@@ -78,26 +78,52 @@ class ThesisStatus(APIView):
         except models.Thesis.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        new_status = request.data.get("status")
+        user = request.user
+        data = decamelize(request.data)
+        new_status = data.get("status")
 
         if new_status is None:
             return Response({"message": "Brak statusu w żądaniu"}, status=status.HTTP_400_BAD_REQUEST)
 
-        current = thesis.status
+        current_status = thesis.status
 
-        allowed_transitions = {
-            "Ukryty": ["Dostępny", "Zarezerwowany"],
-            "Dostępny": ["Ukryty", "Zarezerwowany"],
-            "Zarezerwowany": ["Ukryty", "Student zaakceptowany", "Dostępny"],
-            "Student zaakceptowany": ["Zatwierdzony", "Dostępny"],
+        valid_transitions = {
+            ("Ukryty", "Dostępny"): "supervisor",
+            ("Dostępny", "Ukryty"): "supervisor",
+            ("Zarezerwowany", "Ukryty"): "supervisor",
+            ("Dostępny", "Zarezerwowany"): "student",
+            ("Zarezerwowany", "Student zaakceptowany"): "supervisor",
+            ("Student zaakceptowany", "Zatwierdzony"): "student",
+            ("Zarezerwowany", "Dostępny"): "student",
+            ("Student zaakceptowany", "Dostępny"): "student",
         }
-        if new_status not in allowed_transitions.get(current, []):
-            return Response({"message": f"Nie można zmienić statusu z '{current}' na '{new_status}'"},
+        if (current_status, new_status) not in valid_transitions:
+            return Response({"message": f"Nie można zmienić statusu z '{current_status}' na '{new_status}'"},
                             status=status.HTTP_403_FORBIDDEN)
+
+        required_role = valid_transitions[(current_status, new_status)]
+
+        if required_role == "student" and not user.is_student:
+            return Response({"message": "Tylko student może wykonać tę zmianę"}, status=status.HTTP_403_FORBIDDEN)
+
+        if required_role == "supervisor" and not user.is_supervisor:
+            return Response({"message": "Tylko promotor może wykonać tę zmianę"}, status=status.HTTP_403_FORBIDDEN)
+
+        if required_role == "supervisor" and thesis.owner != user:
+            return Response({"message": "Nie jesteś promotorem tej pracy"}, status=status.HTTP_403_FORBIDDEN)
+
+        if user.is_student:
+            if (current_status, new_status) == ("Dostępny", "Zarezerwowany"):
+                thesis.producer = user
+            elif thesis.producer != user:
+                return Response({"message": "Nie jesteś przypisanym studentem"}, status=status.HTTP_403_FORBIDDEN)
+            
+        if new_status == "Dostępny":
+            thesis.producer = None
 
         thesis.status = new_status
         thesis.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Status został zmieniony"}, status=status.HTTP_200_OK)
 
 class CreateThesisView(APIView):
     permission_classes = [account_permissions.IsSupervisor]

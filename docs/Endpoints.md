@@ -396,6 +396,16 @@ Status może się zmienić:
 (4) tu też chyba po prostu zmieniany jest status na backendzie, promotor nie może edytować zawartości pracy
 (5) `reservedBy` jest null, promotor może edytować zawartość pracy
 
+## Ciało
+
+Przykładowy json:
+
+```json
+{
+  "status": "Zarezerwowany"
+}
+```
+
 **Odpowiedź:**
 Brak specyfikacji
 
