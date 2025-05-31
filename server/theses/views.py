@@ -67,6 +67,37 @@ class ThesisView(APIView):
             thesis.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
+    
+class ThesisStatus(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, thesis_id):
+        try:
+            thesis = models.Thesis.objects.get(id=thesis_id)
+        except models.Thesis.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get("status")
+
+        if new_status is None:
+            return Response({"message": "Brak statusu w żądaniu"}, status=status.HTTP_400_BAD_REQUEST)
+
+        current = thesis.status
+
+        allowed_transitions = {
+            "Ukryty": ["Dostępny", "Zarezerwowany"],
+            "Dostępny": ["Ukryty", "Zarezerwowany"],
+            "Zarezerwowany": ["Ukryty", "Student zaakceptowany", "Dostępny"],
+            "Student zaakceptowany": ["Zatwierdzony", "Dostępny"],
+        }
+        if new_status not in allowed_transitions.get(current, []):
+            return Response({"message": f"Nie można zmienić statusu z '{current}' na '{new_status}'"},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        thesis.status = new_status
+        thesis.save()
+        return Response(status=status.HTTP_200_OK)
 
 class CreateThesisView(APIView):
     permission_classes = [account_permissions.IsSupervisor]

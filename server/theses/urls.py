@@ -13,4 +13,5 @@ urlpatterns = [
     path('supervisors/<int:supervisor_id>/', views.SupervisorDetailView.as_view(), name='supervisor-detail'),
     path('thesis/new/', views.CreateThesisView.as_view(), name='thesis-nes'),
     path('theses/<int:thesis_id>/edit/', views.ThesisView.as_view(), name='thesis-edit'),
+    path('theses/<int:thesis_id>/status/edit/', views.ThesisStatus.as_view(), name='thesis-status-edit'),
 ]
