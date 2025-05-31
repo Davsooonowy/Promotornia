@@ -223,6 +223,32 @@ export default function Thesis() {
     },
   })
 
+  const deleteThesisMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("token")
+      if (!thesis) throw new Error("Nie znaleziono pracy.")
+      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: thesis.id,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error("Nie udało się usunąć pracy.")
+      }
+    },
+    onError: (e) => {
+      setMutationError(e.message)
+    },
+    onSuccess: () => {
+      setMutationSuccessMessage("Usunięto pracę")
+    },
+  })
+
   useEffect(() => {
     if (shouldFetchThesis) {
       thesisFetch.mutate()
@@ -359,7 +385,7 @@ export default function Thesis() {
               )}
             </CardContent>
           </div>
-          <div className="box-border w-2/5 space-y-3 rounded-none border-none">
+          <div className="box-border flex w-2/5 flex-col space-y-3 rounded-none border-none">
             <CardHeader className="space-y-2 text-2xl">
               {
                 //thesis.supervisorId === tokenPayload?.user_id &&
@@ -391,7 +417,24 @@ export default function Thesis() {
                     </CardTitle>
                   )
               }
-              <CardTitle>Status tematu: {thesis.status}</CardTitle>
+              <div className="flex justify-between">
+                <CardTitle className="mt-1">
+                  Status tematu: {thesis.status}
+                </CardTitle>
+                {thesis.status === "Ukryty" && (
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer text-red-400"
+                    onClick={() => {
+                      if (confirm("Czy na pewno chcesz usunąć ten temat?")) {
+                        deleteThesisMutation.mutate()
+                      }
+                    }}
+                  >
+                    Usuń temat
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             {thesis.reservedBy && (
               <CardContent className="space-y-3">
