@@ -79,7 +79,7 @@ export default function OwnTheses() {
 
         const data = await thesesResponse.json()
 
-        const mappedTheses = data.theses.map((thesis: any) => ({
+        const mappedTheses = data.theses.map((thesis) => ({
           id: thesis.id,
           title: thesis.name,
           description: thesis.description,

@@ -47,9 +47,7 @@ export interface ThesesListProps {
 export default function ThesesList({
   basePath,
   supervisorsPath,
-  canEdit = false,
   canReserve = false,
-  currentUserId,
 }: ThesesListProps) {
   const router = useRouter()
 
