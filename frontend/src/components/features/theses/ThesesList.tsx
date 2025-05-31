@@ -60,7 +60,7 @@ export default function ThesesList({
   const [currentPage, setCurrentPage] = useState(1)
   const [sortField, setSortField] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([])
   const [tagSearchQuery, setTagSearchQuery] = useState("")
   const [visibleTagsCount, setVisibleTagsCount] = useState(20)
   const [theses, setTheses] = useState<ThesisDetails[] | null>([])
@@ -163,7 +163,7 @@ export default function ThesesList({
     }
   }
 
-  const toggleTag = (tag: string) => {
+  const toggleTag = (tag: Tag) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     )
@@ -365,14 +365,14 @@ export default function ThesesList({
       </Card>
 
       <div className="space-y-4">
-        {theses.length === 0 ? (
+        {theses?.length === 0 ? (
           <Card className="bg-card">
             <CardContent className="text-foreground pt-6 text-center">
               <p>Nie znaleziono tematów spełniających kryteria wyszukiwania.</p>
             </CardContent>
           </Card>
         ) : (
-          theses.map((topic) => (
+          theses?.map((topic) => (
             <Card
               key={topic.id}
               className="bg-card transition-shadow hover:shadow-md"
@@ -430,13 +430,21 @@ export default function ThesesList({
                         >
                           Szczegóły
                         </Button>
-                        {canEdit &&
+                        {/* {canEdit &&
                           (currentUserId === undefined ||
-                            currentUserId === topic.promoterId) && (
-                            <Button size="sm" className="cursor-pointer">
+                            currentUserId === topic.supervisorId) && (
+                            <Button
+                              size="sm"
+                              className="cursor-pointer"
+                              onClick={() =>
+                                router.push(
+                                  `/protected/supervisor/theses/${topic.id}`,
+                                )
+                              }
+                            >
                               Edytuj
                             </Button>
-                          )}
+                          )} */}
                         {canReserve && topic.status === "Dostępny" && (
                           <Button size="sm" className="cursor-pointer">
                             Zarezerwuj
@@ -461,7 +469,9 @@ export default function ThesesList({
                   {topic.reservedBy && (
                     <div className="text-muted-foreground text-sm">
                       Zarezerwowany przez:{" "}
-                      <span className="font-medium">{topic.reservedBy}</span>
+                      <span className="font-medium">
+                        {topic.reservedBy.name + " " + topic.reservedBy.surname}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -471,7 +481,7 @@ export default function ThesesList({
         )}
       </div>
 
-      {theses.length > 0 && (
+      {theses && theses.length && theses.length > 0 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>

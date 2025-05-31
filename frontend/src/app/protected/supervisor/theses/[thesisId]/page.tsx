@@ -193,27 +193,27 @@ export default function Thesis() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       if (!thesis) throw new Error("Nie znaleziono pracy.")
-      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/edit/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: thesis.id,
+            title: thesis.title,
+            fieldOfStudy: thesis.fieldOfStudy,
+            description: thesis.description,
+            prerequisitesDescription: thesis.prerequisitesDescription,
+            tags: thesis.tags.map((tag) => tag.id),
+          }),
         },
-        body: JSON.stringify({
-          id: thesis.id,
-          name: thesis.title,
-          field_of_study: thesis.fieldOfStudy,
-          description: thesis.description,
-          prerequisites: thesis.prerequisitesDescription,
-          tags: thesis.tags.map((tag) => tag.id),
-        }),
-      })
+      )
       if (!response.ok) {
         throw new Error("Nie udało się zapisać zmian.")
       }
-      const data = await response.json()
-
-      if (!data) throw new Error("Nie udało się zapisać zmian.")
     },
     onError: (e) => {
       setMutationError(e.message)
@@ -294,7 +294,12 @@ export default function Thesis() {
               )}
             </CardHeader>
             <CardContent className="flex w-2/3 flex-col items-start space-y-6">
-              <Label>Kierunek: {thesis.fieldOfStudy.name}</Label>
+              <Label>
+                Kierunek:{" "}
+                {thesis.fieldOfStudy
+                  ? thesis.fieldOfStudy.name
+                  : "Należy wybrać kierunek"}
+              </Label>
               {editionMode &&
                 (thesis.status !== "Ukryty" ? (
                   <Button
@@ -316,11 +321,13 @@ export default function Thesis() {
                   />
                 ))}
               <div className="space-x-2">
-                {thesis.tags.map((tag) => (
-                  <Badge key={tag.id} variant="secondary">
-                    {tag.name}
-                  </Badge>
-                ))}
+                {thesis?.tags.length > 0
+                  ? thesis.tags.map((tag) => (
+                      <Badge key={tag.id} variant="secondary">
+                        {tag.name}
+                      </Badge>
+                    ))
+                  : "Brak tagów"}
               </div>
               {editionMode && (
                 <EditThesisTagsDialog
