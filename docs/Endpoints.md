@@ -591,7 +591,7 @@ headers: {
 | free_spots | number | | Liczba wolnych miejsc |
 | total_spots | number | | Liczba wolnych + zajętych miejsc |
 
-# Endpoint GET /fields_of_study/
+# Endpoint GET /user/fields_of_study/
 **Opis**
 
 Zwraca listę kierunków studiów, na które przypisany jest dany użytkownik
