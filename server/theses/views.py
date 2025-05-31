@@ -118,7 +118,7 @@ class ThesisStatus(APIView):
             elif thesis.producer != user:
                 return Response({"message": "Nie jesteś przypisanym studentem"}, status=status.HTTP_403_FORBIDDEN)
             
-        if new_status == "Dostępny":
+        if new_status == "Dostępny" or new_status == "Ukryty":
             thesis.producer = None
 
         thesis.status = new_status
