@@ -1,3 +1,4 @@
+from humps.main import decamelize
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,14 +25,6 @@ class ThesisView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = serializers.CreateThesisSerializer(data=request.data, context={"user": request.user})
-        if serializer.is_valid():
-            thesis = serializer.save()
-            return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def get(self, request, thesis_id):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
@@ -39,6 +32,31 @@ class ThesisView(APIView):
             resp = serializers.ThesisSerializer(thesis).data
             return Response(resp, status=status.HTTP_200_OK)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, thesis_id):
+        try:
+            thesis = models.Thesis.objects.get(id=thesis_id)
+        except models.Thesis.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        data = decamelize(request.data)
+
+        if (
+            thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
+            (thesis.status.lower() != "ukryty" and data.get("field_of_study") is not None)
+        ):
+            return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
+
+
+        serializer = serializers.UpdateThesisSerializer(
+            instance=thesis,
+            data=data,
+            context={"user": request.user}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, thesis_id):
         thesis = models.Thesis.objects.filter(id=thesis_id)
@@ -50,17 +68,29 @@ class ThesisView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, thesis_id):
-        thesis = models.Thesis.objects.filter(id=thesis_id)
-        if thesis.count() > 0:
-            thesis = thesis[0]
-            serializer = serializers.UpdateThesisSerializer(thesis, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializers.ThesisSerializer(thesis).data, status=status.HTTP_200_OK)
-            print(serializer.errors)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response({}, status=status.HTTP_404_NOT_FOUND)
+class CreateThesisView(APIView):
+    permission_classes = [account_permissions.IsSupervisor]
+
+    def get(self, request):
+        user = request.user
+        owned_theses = models.Thesis.objects.filter(
+            owner=user,
+        )
+        if owned_theses.count() >= user.total_spots:
+            return Response(
+                {"message": "Maksymalna liczba dozwolonych prac osiągnięta"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        thesis = models.Thesis.objects.create(
+            owner=request.user,
+            description="Podaj opis pracy",
+            prerequisites="Podaj opis wymagań wstępnych",
+
+        )
+        thesis.name = f"Praca nr. {thesis.id}. Podaj nazwę pracy"
+        thesis.save()
+        return Response({"id": thesis.id}, status=status.HTTP_200_OK)
 
 class ThesisListView(APIView):
 
@@ -97,6 +127,8 @@ class ThesisListView(APIView):
             else:
                 objects = objects.exclude(status="Dostępny")
 
+        objects = objects.exclude(status="Ukryty")
+
         if order is not None:
             desc = '' if ascending else '-'
             match order:
@@ -116,7 +148,8 @@ class ThesisListView(APIView):
         for record in data:
             record.pop('description', None)
             record.pop('prerequisites', None)
-            record['field_of_study'].pop('description', None)
+            if (field := record.get('field_of_study')) is not None:
+                field.pop('description', None)
             record.pop('producer', None)
 
         return Response({"theses": data}, status=status.HTTP_200_OK)
@@ -222,7 +255,8 @@ class SupervisorThesesView(APIView):
         for record in data:
             record.pop('description', None)
             record.pop('prerequisites', None)
-            record['field_of_study'].pop('description', None)
+            if (field := record.get('field_of_study')) is not None:
+                field.pop('description', None)
             record.pop('producer', None)
 
         return Response({"theses": data}, status=status.HTTP_200_OK)

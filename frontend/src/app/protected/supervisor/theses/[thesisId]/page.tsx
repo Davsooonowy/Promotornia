@@ -122,7 +122,7 @@ export default function Thesis() {
   const allFieldsOfStudyFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/field_of_study/`, {
+      const response = await fetch(`${apiUrl}/user/fields_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -134,7 +134,7 @@ export default function Thesis() {
       }
 
       const data = await response.json()
-      return data
+      return data.fields_of_study
     },
     onError: (e) => {
       setFieldsOfStudyFetchError(e.message)
@@ -193,33 +193,59 @@ export default function Thesis() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       if (!thesis) throw new Error("Nie znaleziono pracy.")
-      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/edit/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: thesis.id,
+            title: thesis.title,
+            fieldOfStudy: thesis.fieldOfStudy,
+            description: thesis.description,
+            prerequisitesDescription: thesis.prerequisitesDescription,
+            tags: thesis.tags.map((tag) => tag.id),
+          }),
         },
-        body: JSON.stringify({
-          id: thesis.id,
-          name: thesis.title,
-          field_of_study: thesis.fieldOfStudy,
-          description: thesis.description,
-          prerequisites: thesis.prerequisitesDescription,
-          tags: thesis.tags.map((tag) => tag.id),
-        }),
-      })
+      )
       if (!response.ok) {
         throw new Error("Nie udało się zapisać zmian.")
       }
-      const data = await response.json()
-
-      if (!data) throw new Error("Nie udało się zapisać zmian.")
     },
     onError: (e) => {
       setMutationError(e.message)
     },
     onSuccess: () => {
       setMutationSuccessMessage("Zapisano zmiany")
+    },
+  })
+
+  const deleteThesisMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("token")
+      if (!thesis) throw new Error("Nie znaleziono pracy.")
+      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: thesis.id,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error("Nie udało się usunąć pracy.")
+      }
+    },
+    onError: (e) => {
+      setMutationError(e.message)
+    },
+    onSuccess: () => {
+      setMutationSuccessMessage("Usunięto pracę")
     },
   })
 
@@ -294,7 +320,12 @@ export default function Thesis() {
               )}
             </CardHeader>
             <CardContent className="flex w-2/3 flex-col items-start space-y-6">
-              <Label>Kierunek: {thesis.fieldOfStudy.name}</Label>
+              <Label>
+                Kierunek:{" "}
+                {thesis.fieldOfStudy
+                  ? thesis.fieldOfStudy.name
+                  : "Należy wybrać kierunek"}
+              </Label>
               {editionMode &&
                 (thesis.status !== "Ukryty" ? (
                   <Button
@@ -316,11 +347,13 @@ export default function Thesis() {
                   />
                 ))}
               <div className="space-x-2">
-                {thesis.tags.map((tag) => (
-                  <Badge key={tag.id} variant="secondary">
-                    {tag.name}
-                  </Badge>
-                ))}
+                {thesis?.tags.length > 0
+                  ? thesis.tags.map((tag) => (
+                      <Badge key={tag.id} variant="secondary">
+                        {tag.name}
+                      </Badge>
+                    ))
+                  : "Brak tagów"}
               </div>
               {editionMode && (
                 <EditThesisTagsDialog
@@ -352,7 +385,7 @@ export default function Thesis() {
               )}
             </CardContent>
           </div>
-          <div className="box-border w-2/5 space-y-3 rounded-none border-none">
+          <div className="box-border flex w-2/5 flex-col space-y-3 rounded-none border-none">
             <CardHeader className="space-y-2 text-2xl">
               {
                 //thesis.supervisorId === tokenPayload?.user_id &&
@@ -384,7 +417,24 @@ export default function Thesis() {
                     </CardTitle>
                   )
               }
-              <CardTitle>Status tematu: {thesis.status}</CardTitle>
+              <div className="flex justify-between">
+                <CardTitle className="mt-1">
+                  Status tematu: {thesis.status}
+                </CardTitle>
+                {thesis.status === "Ukryty" && (
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer text-red-400"
+                    onClick={() => {
+                      if (confirm("Czy na pewno chcesz usunąć ten temat?")) {
+                        deleteThesisMutation.mutate()
+                      }
+                    }}
+                  >
+                    Usuń temat
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             {thesis.reservedBy && (
               <CardContent className="space-y-3">

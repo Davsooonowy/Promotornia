@@ -11,4 +11,6 @@ urlpatterns = [
     path('supervisor/tags/', views.TagView.as_view(), name='supervisor_tags'),
     path('thesis/supervisor/<int:supervisor_id>/', views.SupervisorThesesView.as_view(), name='supervisor-theses'),
     path('supervisors/<int:supervisor_id>/', views.SupervisorDetailView.as_view(), name='supervisor-detail'),
+    path('thesis/new/', views.CreateThesisView.as_view(), name='thesis-nes'),
+    path('theses/<int:thesis_id>/edit/', views.ThesisView.as_view(), name='thesis-edit'),
 ]

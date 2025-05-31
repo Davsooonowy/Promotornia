@@ -79,7 +79,7 @@ export default function OwnTheses() {
 
         const data = await thesesResponse.json()
 
-        const mappedTheses = data.theses.map((thesis) => ({
+        const mappedTheses = data.theses.map((thesis: any) => ({
           id: thesis.id,
           title: thesis.name,
           description: thesis.description,
@@ -203,9 +203,6 @@ export default function OwnTheses() {
                           }
                         >
                           Szczegóły
-                        </Button>
-                        <Button size="sm" className="cursor-pointer">
-                          Edytuj
                         </Button>
                       </div>
                     </div>
