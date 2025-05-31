@@ -78,7 +78,7 @@ export default function EditFieldOfStudyDialog(props: {
           <SelectContent>
             {props.fieldsOfStudy?.map((fieldOfStudy) => (
               <SelectItem value={String(fieldOfStudy.id)} key={fieldOfStudy.id}>
-                {fieldOfStudy.field}
+                {fieldOfStudy.name}
               </SelectItem>
             ))}
           </SelectContent>

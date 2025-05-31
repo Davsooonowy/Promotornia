@@ -4,22 +4,25 @@ import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { Label } from "@/components/ui/label"
 
 export default function New() {
   const router = useRouter()
   const [shouldMutate, setShouldMutate] = useState(true)
-  const [pageContentText, setPageContentText] = useState("Tworzę nową pracę")
+  const [thesisId, setThesisId] = useState(null)
 
   const newThesisMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/thesis/`, {
-        method: "POST",
+      const response = await fetch(`${apiUrl}/thesis/new/`, {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
       })
 
       if (!response.ok) {
@@ -35,20 +38,37 @@ export default function New() {
       return thesisId
     },
     onError: () => {
-      setPageContentText("Błąd. Przekierowuję do profilu.")
+      toast.error("Nie udało się stworzyć pracy.", {
+        description: "Przekierowuję do profilu.",
+      })
       setTimeout(() => router.push("/protected/supervisor/profile"), 3000)
     },
     onSuccess: (thesisId) => {
-      router.push(`/protected/supervisor/theses/${thesisId}`)
+      setThesisId(thesisId)
     },
   })
 
   useEffect(() => {
     if (shouldMutate) {
-      newThesisMutation.mutate()
       setShouldMutate(false)
+      newThesisMutation.mutate()
     }
-  }, [newThesisMutation, shouldMutate])
+  }, [shouldMutate])
 
-  return <h1 className="text-3xl">{pageContentText}</h1>
+  return (
+    <>
+      {newThesisMutation.isPending ? (
+        <h1 className="text-3xl">pageContentText</h1>
+      ) : (
+        thesisId && (
+          <>
+            <Label className="mb-3">Utworzono pracę</Label>
+            <Link href={`/protected/supervisor/theses/${thesisId}`}>
+              <Button>Przejdź do pracy</Button>
+            </Link>
+          </>
+        )
+      )}
+    </>
+  )
 }
