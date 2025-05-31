@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
-import useDecodeToken from "@/hooks/useDecodeToken"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { LoadingErrorState } from "@/components/ui/loading-error-state"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
@@ -26,56 +25,49 @@ export default function ChangePersonalData() {
   })
   const [isSuccess, setIsSuccess] = useState<boolean>(false)
   const [shouldFetch, setShouldFetch] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const { token } = useDecodeToken()
+  const personalDataFetch = useMutation({
+    mutationFn: async () => {
+      setLoading(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/user/personal_data/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-  const personalDataQuery = useQuery({
-    queryKey: ["personalData"],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`${apiUrl}/user/personal_data/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error(`Błąd ${response.status}: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        return data
-      } catch (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error(`Błąd ${response.status}: ${response.statusText}`)
       }
+
+      const data = await response.json()
+      console.log(data)
+      return data
     },
-    enabled: shouldFetch,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    onError: (err) => {
+      setError(err.message)
+    },
+    onSuccess: (data) => {
+      setName({ current: data.first_name, initial: data.first_name })
+      setSurname({ current: data.last_name, initial: data.last_name })
+      setLoading(false)
+    },
   })
 
   useEffect(() => {
-    if (personalDataQuery.data) {
-      setName({
-        initial: personalDataQuery.data.name,
-        current: personalDataQuery.data.name,
-      })
-      setSurname({
-        initial: personalDataQuery.data.surname,
-        current: personalDataQuery.data.surname,
-      })
+    if (shouldFetch) {
+      setShouldFetch(false)
+      personalDataFetch.mutate()
     }
-  }, [personalDataQuery.data])
-
-  useEffect(() => {
-    if (isSuccess) setShouldFetch(true)
-  }, [isSuccess])
+  }, [shouldFetch, personalDataFetch])
 
   const personalDataMutation = useMutation({
     mutationFn: async () => {
+      const token = localStorage.getItem("token")
       try {
         const response = await fetch(`${apiUrl}/user/personal_data/`, {
           method: "PUT",
@@ -130,15 +122,11 @@ export default function ChangePersonalData() {
       <Card className="w-full">
         <CardContent className="space-y-3">
           <LoadingErrorState
-            isLoading={personalDataQuery.isLoading}
-            isError={personalDataQuery.isError}
-            error={
-              personalDataQuery.error instanceof Error
-                ? personalDataQuery.error
-                : new Error("Unknown error")
-            }
+            isLoading={loading}
+            isError={!!error}
+            error={error ? new Error(error) : new Error("Nieznany błąd")}
             context="personalData"
-            resetError={() => personalDataQuery.refetch()}
+            resetError={() => personalDataFetch.mutate()}
           >
             <>
               <Label>Imię:</Label>
