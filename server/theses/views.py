@@ -39,9 +39,18 @@ class ThesisView(APIView):
         except models.Thesis.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
+        data = decamelize(request.data)
+        print(thesis.status.lower())
+        if (
+            thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
+            (thesis.status.lower() != "ukryty" and data.get("field_of_study") is not None)
+        ):
+            return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
+
+
         serializer = serializers.UpdateThesisSerializer(
             instance=thesis,
-            data=decamelize(request.data),
+            data=data,
             context={"user": request.user}
         )
         if serializer.is_valid():
@@ -63,6 +72,16 @@ class CreateThesisView(APIView):
     permission_classes = [account_permissions.IsSupervisor]
 
     def get(self, request):
+        user = request.user
+        owned_theses = models.Thesis.objects.filter(
+            owner=user,
+        )
+        if owned_theses.count() >= user.total_spots:
+            return Response(
+                {"message": "Maksymalna liczba dozwolonych prac osiągnięta"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         thesis = models.Thesis.objects.create(
             owner=request.user,
             description="Podaj opis pracy",

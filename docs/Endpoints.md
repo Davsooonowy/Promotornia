@@ -540,3 +540,47 @@ Dla fieldOfStudy i tags zapewne wykorzystywane będzie tylko id, ale name nie sz
 
 Warto zweryfikować na backendzie czy status jest "Ukryty", jeśli zmieniony jest kierunek studiów (Uwaga! jeśli jest zmieniony, czyli trzeba porównać z obecnym w bazie), bo założenie jest takie, że kierunek studiów można modyfikować tylko, jeśli status to "Ukryty"
 Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Student zaakceptowany", czyli jeśli status jest co najmniej "Student zaakceptowany", to ten endpoint nie powinien działać
+
+# Endpoint GET /thesis/supervisor/{supervisorId}/
+**Opis:**
+Zwraca prace dyplomowe posiadane przez danego promotora.
+
+headers: {
+  Content-Type: "application/json"
+  Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Odpowiedź
+`User = {id: number, email: string, first_name: string, last_name: string, title: string}`
+
+`FieldOfStudy = {id: number, name: string}`
+
+**Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| id | number | | Identyfikator pracy |
+| name | string | | Nazwa pracy |
+| owner | User | | Opiekun pracy |
+| field_of_study | FieldOfStudy | | Kierunek studiów (wraz z wydziałem) gdzie realizowana jest praca |
+| date_of_creation | DateTime | | Data utworzenia |
+| tags | List[{id: number, name: string}] | | Lista tagów |
+| status | string | | Status pracy dyplomowej |
+
+To samo co w endpoincie z listowaniem prac.
+
+# Endpoint GET /supervisors/{supervisorId}/
+
+## Odpowiedź
+
+`FieldOfStudy = {id: number, name: string, description: string}`
+
+| Nazwa  | Typ    | Wymagany | Opis                       |
+|--------|--------|----------|----------------------------|
+| id | number | | ID promotora |
+| email | string | | |
+| first_name | string | | |
+| last_name | string | | |
+| title | string | | Stopień promotora |
+| field_of_study | FieldOfStudy | | Kierunek + wydział |
+| free_spots | number | | Liczba wolnych miejsc |
+| total_spots | number | | Liczba wolnych + zajętych miejsc |
