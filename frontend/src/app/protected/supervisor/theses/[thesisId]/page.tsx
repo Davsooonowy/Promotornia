@@ -122,7 +122,7 @@ export default function Thesis() {
   const allFieldsOfStudyFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/field_of_study/`, {
+      const response = await fetch(`${apiUrl}/user/fields_of_study/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -134,7 +134,7 @@ export default function Thesis() {
       }
 
       const data = await response.json()
-      return data
+      return data.fields_of_study
     },
     onError: (e) => {
       setFieldsOfStudyFetchError(e.message)
