@@ -53,12 +53,12 @@ export default function New() {
       setShouldMutate(false)
       newThesisMutation.mutate()
     }
-  }, [shouldMutate])
+  }, [shouldMutate, newThesisMutation])
 
   return (
     <>
       {newThesisMutation.isPending ? (
-        <h1 className="text-3xl">pageContentText</h1>
+        <h1 className="text-3xl">Tworzę nową pracę...</h1>
       ) : (
         thesisId && (
           <>
