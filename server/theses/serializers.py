@@ -46,17 +46,14 @@ class UpdateThesisSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, default="")
     prerequisites_description = serializers.CharField(required=False, default="")
     tags = serializers.ListField(required=False, default=[])
-    producer = account_serializers.UserSerializer(
-        required=False,
-        default=None,
-        read_only=True
-    )
+    producer_id = serializers.IntegerField(required=False, default=None)
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")
         attrs["prerequisites"] = attrs.pop("prerequisites_description")
         field_of_study = attrs.pop("field_of_study")
         fos_id = field_of_study.get("id")
+        producer_id = attrs.get("producer_id")
         try:
             conflict = models.Thesis.objects.get(
                 name=attrs["name"]
@@ -65,6 +62,24 @@ class UpdateThesisSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Praca z daną nazwą już istnieje")
         except models.Thesis.DoesNotExist:
             pass
+
+        if producer_id is not None:
+            try:
+                account_models.SystemUser.objects.get(
+                    id=producer_id,
+                    is_student=True
+                )
+            except account_models.SystemUser.DoesNotExist:
+                raise serializers.ValidationError(f"Student o ID {producer_id} nie istnieje")
+
+            try:
+                conflict = models.Thesis.objects.get(
+                    producer_id=producer_id,
+                )
+                if conflict.id != self.instance.id:
+                    raise serializers.ValidationError(f"Student o ID {producer_id} jest już przypisany do pracy pt. {conflict.name}")
+            except models.Thesis.DoesNotExist:
+                pass
 
         if fos_id is not None:
             try:

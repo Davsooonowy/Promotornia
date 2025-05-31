@@ -40,7 +40,7 @@ class ThesisView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         data = decamelize(request.data)
-        print(thesis.status.lower())
+
         if (
             thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
             (thesis.status.lower() != "ukryty" and data.get("field_of_study") is not None)
@@ -127,6 +127,8 @@ class ThesisListView(APIView):
             else:
                 objects = objects.exclude(status="Dostępny")
 
+        objects = objects.exclude(status="Ukryty")
+
         if order is not None:
             desc = '' if ascending else '-'
             match order:
@@ -146,7 +148,8 @@ class ThesisListView(APIView):
         for record in data:
             record.pop('description', None)
             record.pop('prerequisites', None)
-            record['field_of_study'].pop('description', None)
+            if (field := record.get('field_of_study')) is not None:
+                field.pop('description', None)
             record.pop('producer', None)
 
         return Response({"theses": data}, status=status.HTTP_200_OK)
@@ -252,7 +255,8 @@ class SupervisorThesesView(APIView):
         for record in data:
             record.pop('description', None)
             record.pop('prerequisites', None)
-            record['field_of_study'].pop('description', None)
+            if (field := record.get('field_of_study')) is not None:
+                field.pop('description', None)
             record.pop('producer', None)
 
         return Response({"theses": data}, status=status.HTTP_200_OK)
