@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.db.models import Count, F, Q, Value, IntegerField, ExpressionWrapper
+from django.db.models.functions import Concat
 
 from . import permissions, models
 from . import serializers
@@ -121,3 +123,27 @@ class FieldOfStudyListView(APIView):
         for fos in data:
             fos.pop("description", None)
         return Response({"fields_of_study": data}, status=status.HTTP_200_OK)
+    
+class SupervisorDetailView(APIView):
+    def get(self, request, supervisor_id):
+        try:
+            taken_statuses = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
+            supervisor = models.SystemUser.objects.annotate(
+                full_name=Concat(F('first_name'), Value(' '), F('last_name')),
+                taken_spots=Count(
+                    'owned_theses',
+                    filter=Q(owned_theses__status__in=taken_statuses)
+                ),
+                free_spots=ExpressionWrapper(
+                    F('total_spots') - F('taken_spots'),
+                    output_field=IntegerField()
+                )
+            ).get(id=supervisor_id, is_supervisor=True)
+        except models.SystemUser.DoesNotExist:
+            return Response(
+                {"detail": "Nie znaleziono promotora o podanym ID."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = serializers.SupervisorSerializer(supervisor)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -12,4 +12,5 @@ urlpatterns = [
     path('field_of_study/', views.FieldOfStudyView.as_view(), name='field_of_study'),
     path('field_of_study/<int:pk>/', views.FieldOfStudyView.as_view(), name='field_of_study'),
     path('user/fields_of_study/', views.FieldOfStudyListView.as_view(), name='fields_of_study'),
+    path('user/supervisor/<int:supervisor_id>/', views.SupervisorDetailView.as_view(), name='supervisor_profile'),
 ]
