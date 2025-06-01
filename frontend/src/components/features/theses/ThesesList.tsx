@@ -34,21 +34,15 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
 import { Tag, ThesisDetails } from "@/util/types"
+import { UserRole } from "@/util/enums"
 
 export interface ThesesListProps {
   basePath: string
-  supervisorsPath: string
-  canEdit?: boolean
-  canReserve?: boolean
-  currentUserId?: number
   filterBySupervisor?: number
+  userRole: UserRole
 }
 
-export default function ThesesList({
-  basePath,
-  supervisorsPath,
-  canReserve = false,
-}: ThesesListProps) {
+export default function ThesesList({ basePath, userRole }: ThesesListProps) {
   const router = useRouter()
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -391,7 +385,7 @@ export default function ThesesList({
                       <div className="flex items-center gap-2">
                         <User className="text-muted-foreground h-4 w-4" />
                         <Link
-                          href={`${supervisorsPath}/${topic.supervisorId}`}
+                          href={`/protected/${userRole.toString()}/supervisors/${topic.supervisorId}`}
                           className="text-foreground text-sm hover:underline"
                         >
                           {topic.supervisor}
@@ -422,7 +416,7 @@ export default function ThesesList({
                           className="cursor-pointer"
                           onClick={() =>
                             router.push(
-                              `/protected/supervisor/theses/${topic.id}`,
+                              `/protected/${userRole.toString()}/theses/${topic.id}`,
                             )
                           }
                         >
@@ -443,15 +437,9 @@ export default function ThesesList({
                               Edytuj
                             </Button>
                           )} */}
-                        {canReserve && topic.status === "Dostępny" && (
-                          <Button size="sm" className="cursor-pointer">
-                            Zarezerwuj
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>
-
                   <div className="flex flex-wrap gap-2">
                     {topic.tags.map((tag) => (
                       <Badge
