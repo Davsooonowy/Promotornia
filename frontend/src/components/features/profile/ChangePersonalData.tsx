@@ -45,7 +45,6 @@ export default function ChangePersonalData() {
       }
 
       const data = await response.json()
-      console.log(data)
       return data
     },
     onError: (err) => {

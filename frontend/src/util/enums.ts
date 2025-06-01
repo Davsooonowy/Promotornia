@@ -1,7 +1,7 @@
 enum UserRole {
-  student,
-  supervisor,
-  dean,
+  student = "student",
+  supervisor = "supervisor",
+  dean = "dean",
 }
 
 export { UserRole }

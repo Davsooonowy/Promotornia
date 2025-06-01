@@ -17,18 +17,21 @@ import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
 import { FieldOfStudy } from "@/util/types"
 import { useMutation, UseMutationResult } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import { useState, useEffect, SetStateAction, Dispatch } from "react"
 import apiUrl from "@/util/apiUrl"
+import { Input } from "@/components/ui/input"
 
 export default function ActionDialog(props: {
   actionToLabel: Map<string, string>
   userType: string | null
-  setAction: (value: string) => void
+  setAction: Dispatch<SetStateAction<string | null>>
   action: string | null
   expirationDate: Date
-  setExpirationDate: (date: Date) => void
-  setFieldOfStudy: (field: FieldOfStudy) => void
-  fieldOfStudy: FieldOfStudy | null
+  setExpirationDate: Dispatch<SetStateAction<Date>>
+  setChosenFieldsOfStudy: Dispatch<SetStateAction<FieldOfStudy[]>>
+  chosenFieldsOfStudy: FieldOfStudy[]
+  setChosenFieldsOfStudyCount: Dispatch<SetStateAction<number>>
+  chosenFieldsOfStudyCount: number
   actionMutation: UseMutationResult<void, Error, void, unknown>
 }) {
   const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[] | null>(
@@ -79,7 +82,7 @@ export default function ActionDialog(props: {
       <DialogTrigger asChild>
         <Button className="cursor-pointer self-start">Przejdź dalej</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Akcja wobec{" "}
@@ -123,40 +126,68 @@ export default function ActionDialog(props: {
               className="rounded-md border"
             />
 
-            <Label>Kierunek studiów: </Label>
-            {fieldsOfStudy ? (
-              <Select
-                key={fieldsOfStudy?.length}
-                onValueChange={(value) =>
-                  props.setFieldOfStudy(JSON.parse(value))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      props.fieldOfStudy
-                        ? props.fieldOfStudy.name
-                        : "Wybierz kierunek"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {fieldsOfStudy.map((fieldOfStudy) => (
-                    <SelectItem
-                      key={fieldOfStudy.id}
-                      value={JSON.stringify({
-                        id: fieldOfStudy.id,
-                        name: fieldOfStudy.name,
-                      })}
+            <Label>Liczba kierunków studiów: </Label>
+            <Input
+              type="number"
+              onInput={(e) => {
+                const newCount = Number(e.currentTarget.value)
+                props.setChosenFieldsOfStudyCount(newCount)
+                props.setChosenFieldsOfStudy((prev) => prev.slice(0, newCount))
+              }}
+              onChange={(e) => {
+                const newCount = Number(e.currentTarget.value)
+                props.setChosenFieldsOfStudyCount(newCount)
+                props.setChosenFieldsOfStudy((prev) => prev.slice(0, newCount))
+              }}
+              value={props.chosenFieldsOfStudyCount}
+            />
+            {fieldsOfStudy
+              ? Array.from({ length: props.chosenFieldsOfStudyCount }).map(
+                  (item, index) => (
+                    <Select
+                      key={index}
+                      onValueChange={(value) =>
+                        props.setChosenFieldsOfStudy((curFieldsOfStudy) => {
+                          if (index < curFieldsOfStudy.length) {
+                            return curFieldsOfStudy.map((curItem, idx) => {
+                              if (idx === index) {
+                                return JSON.parse(value)
+                              } else {
+                                return curItem
+                              }
+                            })
+                          } else {
+                            return [...curFieldsOfStudy, JSON.parse(value)]
+                          }
+                        })
+                      }
                     >
-                      {fieldOfStudy.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              "Wczytywanie..."
-            )}
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            props.chosenFieldsOfStudy[index]
+                              ? props.chosenFieldsOfStudy[index].name
+                              : "Wybierz kierunek"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fieldsOfStudy.map((fieldOfStudy) => (
+                          <SelectItem
+                            key={fieldOfStudy.id}
+                            value={JSON.stringify({
+                              id: fieldOfStudy.id,
+                              name: fieldOfStudy.name,
+                            })}
+                          >
+                            {fieldOfStudy.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ),
+                )
+              : "Wczytywanie..."}
             {fieldsOfStudyFetchError && (
               <Label className="text-red-500">{fieldsOfStudyFetchError}</Label>
             )}

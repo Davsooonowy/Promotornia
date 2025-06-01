@@ -15,6 +15,7 @@ import EditThesisTagsDialog from "@/components/features/thesis/EditThesisTagsDia
 import { toast } from "sonner"
 import EditThesisStatusDialog from "@/components/features/thesis/EditThesisStatusDialog"
 import EditFieldOfStudyDialog from "@/components/features/thesis/EditFieldOfStudyDialog"
+import useDecodeToken from "@/hooks/useDecodeToken"
 
 export default function Thesis() {
   const { thesisId } = useParams<{ thesisId: string }>()
@@ -44,6 +45,8 @@ export default function Thesis() {
   const [mutationSuccessMessage, setMutationSuccessMessage] = useState<
     string | null
   >(null)
+
+  const { tokenPayload } = useDecodeToken()
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
@@ -90,6 +93,13 @@ export default function Thesis() {
     },
     onSuccess: (thesis) => {
       setThesis(thesis)
+      if (
+        thesis.status !== "Ukryty" &&
+        thesis.status !== "Dostępny" &&
+        thesis.status !== "Zarezerwowany"
+      ) {
+        setEditionMode(false)
+      }
     },
   })
 
@@ -146,46 +156,30 @@ export default function Thesis() {
 
   const changeThesisStatusMutation = useMutation({
     mutationFn: async (newStatus: ThesisStatus) => {
-      // const response = await fetch(
-      //   `${apiUrl}/theses/${numericThesisId}/status/edit`,
-      //   {
-      //     method: "PUT",
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({
-      //       newStatus,
-      //     }),
-      //   },
-      // )
-      // if (!response.ok) {
-      //   throw new Error("Nie udało się zmienić statusu pracy.")
-      // }
-      // const data = await response.json()
-
-      return newStatus
+      const token = localStorage.getItem("token")
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/status/edit/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        },
+      )
+      if (!response.ok) {
+        throw new Error("Nie udało się zmienić statusu pracy.")
+      }
     },
     onError: (e) => {
       setMutationError(e.message)
     },
-    onSuccess: (newStatus) => {
+    onSuccess: () => {
       setMutationSuccessMessage("Zmieniono status pracy.")
-      setThesis((theThesis) =>
-        theThesis
-          ? {
-              ...theThesis,
-              status: newStatus,
-              reservedBy: newStatus === "Ukryty" ? null : theThesis?.reservedBy,
-            }
-          : theThesis,
-      )
-      if (
-        newStatus !== "Ukryty" &&
-        newStatus !== "Dostępny" &&
-        newStatus !== "Zarezerwowany"
-      )
-        setEditionMode(false)
+      thesisFetch.mutate()
     },
   })
 
@@ -387,36 +381,33 @@ export default function Thesis() {
           </div>
           <div className="box-border flex w-2/5 flex-col space-y-3 rounded-none border-none">
             <CardHeader className="space-y-2 text-2xl">
-              {
-                //thesis.supervisorId === tokenPayload?.user_id &&
+              {tokenPayload &&
+                thesis.supervisorId === tokenPayload.user_id &&
                 thesis.status !== "Student zaakceptowany" &&
-                  thesis.status !== "Zatwierdzony" && (
-                    <CardTitle className="border-y-2 py-3">
-                      <div className="flex w-full items-center justify-end space-x-3">
-                        <Label>Tryb edycji</Label>{" "}
-                        <Checkbox
-                          checked={editionMode}
-                          onCheckedChange={toggleEditionMode}
-                        />
-                        <Button
-                          className="cursor-pointer"
-                          variant="ghost"
-                          onClick={() => thesisMutation.mutate()}
-                        >
-                          Zapisz zmiany
-                        </Button>
-                        <EditThesisStatusDialog
-                          thesis={thesis}
-                          setThesis={setThesis}
-                          changeThesisStatusMutation={
-                            changeThesisStatusMutation
-                          }
-                          newStatus="Hide or publish"
-                        />
-                      </div>
-                    </CardTitle>
-                  )
-              }
+                thesis.status !== "Zatwierdzony" && (
+                  <CardTitle className="border-y-2 py-3">
+                    <div className="flex w-full items-center justify-end space-x-3">
+                      <Label>Tryb edycji</Label>{" "}
+                      <Checkbox
+                        checked={editionMode}
+                        onCheckedChange={toggleEditionMode}
+                      />
+                      <Button
+                        className="cursor-pointer"
+                        variant="ghost"
+                        onClick={() => thesisMutation.mutate()}
+                      >
+                        Zapisz zmiany
+                      </Button>
+                      <EditThesisStatusDialog
+                        thesis={thesis}
+                        setThesis={setThesis}
+                        changeThesisStatusMutation={changeThesisStatusMutation}
+                        newStatus="Hide or publish"
+                      />
+                    </div>
+                  </CardTitle>
+                )}
               <div className="flex justify-between">
                 <CardTitle className="mt-1">
                   Status tematu: {thesis.status}

@@ -16,9 +16,10 @@ export default function EditThesisStatusDialog(props: {
   thesis: ThesisDetails | null
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   changeThesisStatusMutation: UseMutationResult<
-    ThesisStatus,
+    void,
     Error,
-    ThesisStatus
+    ThesisStatus,
+    unknown
   >
   newStatus: ThesisStatus | "Hide or publish"
 }) {
@@ -29,6 +30,10 @@ export default function EditThesisStatusDialog(props: {
       props.thesis?.status !== "Ukryty" ? "Ukryj pracę" : "Opublikuj pracę"
   } else if (props.newStatus === "Student zaakceptowany") {
     title = "Zaakceptuj studenta"
+  } else if (props.newStatus === "Zarezerwowany") {
+    title = "Zarezewuj temat"
+  } else if (props.newStatus === "Zatwierdzony") {
+    title = "Zatwierdź ostatecznie"
   }
 
   return (
@@ -75,6 +80,30 @@ export default function EditThesisStatusDialog(props: {
                 Nie będzie można już edytować zawartości pracy
               </li>
             )}
+          </ul>
+        )}
+        {props.newStatus === "Zarezerwowany" && (
+          <ul>
+            <li>
+              Promotor nadal będzie mógł zmieniać zawartość pracy aż status
+              zostanie ustawiony na &quot;Student zaakceptowany&quot;, ale
+              będziesz mógł jeszcze cofnąć rezerwację. Promotor zostanie
+              poproszony o zaaceptowanie Twojej rezerwacji, co ty jeszcze
+              będziesz musiał zatwierdzić (wtedy już ostatecznie) lub
+              zrezygnować.
+            </li>
+          </ul>
+        )}
+        {props.newStatus === "Zatwierdzony" && (
+          <ul>
+            <li className="text-red-500">
+              Nie będzie można już cofnąć rezerwacji, zostaniesz ostatecznie
+              przypisany do tematu
+            </li>
+            <li>
+              Promotor nie będzie już mógł modyfikować zawartości pracy (już
+              teraz nie może, bo status to &quot;Student zaakceptowany&quot;)
+            </li>
           </ul>
         )}
         <Button onClick={() => setDialogOpen(false)}>Anuluj</Button>

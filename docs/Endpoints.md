@@ -1,9 +1,11 @@
-# Endpoint: POST /dean/new_users/
+# Endpoint: POST /dean/users/
 
 **Opis:**
 Zapisuje w bazie danych użytkowników z podanymi e-mailami i wygenerowanymi hasłami oraz wysyła na te e-maile wygenerowane hasła.
 
 ## Ciało
+
+!!! Stare !!!
 
 | Nazwa          | Typ                         | Wymagany | Opis                                                          |
 | -------------- | --------------------------- | -------- | ------------------------------------------------------------- |
@@ -11,6 +13,17 @@ Zapisuje w bazie danych użytkowników z podanymi e-mailami i wygenerowanymi has
 | newUsers       | List[{email: string}]       | Tak      | Lista emaili użytkowników jednego typu (student lub promotor) |
 | expirationDate | Date                        | Tak      | Data ważności kont dodawanych użytkowników                    |
 | fieldOfStudy   | {id: number, field: string} | Tak      | Kierunek studiów studenta/promotora                           |
+
+!!! Nowe !!!
+
+```json
+{
+  "userType": "supervisor",
+  "newUsers": [{"email": "supervisor1@agh.edu.pl"}, {"email": "supervisor2@agh.edu.pl"}],
+  "expirationDate": "tak samo jak było",
+  "chosenFieldsOfStudy": [{"id": 1}, {"id": 2}]
+}
+```
 
 headers: {
 Authorization: "Bearer TUTAJ_TOKEN",
@@ -583,10 +596,9 @@ To samo co w endpoincie z listowaniem prac.
 # Endpoint GET /supervisors/{supervisorId}/
 
 headers: {
-  Content-Type: "application/json"
-  Authorization: "Bearer TUTAJ_TOKEN",
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
 }
-
 
 ## Odpowiedź
 
@@ -604,16 +616,18 @@ headers: {
 | total_spots    | number       |          | Liczba wolnych + zajętych miejsc |
 
 # Endpoint GET /user/fields_of_study/
+
 **Opis**
 
 Zwraca listę kierunków studiów, na które przypisany jest dany użytkownik
 
 headers: {
-  Content-Type: "application/json"
-  Authorization: "Bearer TUTAJ_TOKEN",
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
 }
 
 ## Odpowiedź
+
 ```json
 {
   "fields_of_study": [
