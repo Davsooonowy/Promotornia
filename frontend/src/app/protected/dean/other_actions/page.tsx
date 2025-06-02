@@ -1,13 +1,6 @@
 "use client"
 
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,23 +8,23 @@ import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { toast } from "sonner"
-
-type CrudAction = "create" | "read" | "update" | "delete"
+import { ArrowLeft } from "lucide-react"
 
 interface FieldOfStudy {
   id: number
   name: string
-  description: string //TODO: add description field
+  description: string
 }
 
 export default function OtherActions() {
-  const [action, setAction] = useState<CrudAction | null>(null)
   const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[]>([])
-  const [inputValue, setInputValue] = useState("")
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [newFieldInputValue, setNewFieldInputValue] = useState("")
+  const [editedId, setEditedId] = useState<number | null>(null)
+  const [editedNewValue, setEditedNewValue] = useState<string>("")
+  const [editedOldValue, setEditedOldValue] = useState<string>("")
   const [mutationError, setMutationError] = useState<string | null>(null)
   const [shouldFetch, setShouldFetch] = useState(true)
-  const [loading, setLoading] = useState(true)
+  const [mutationSuccess, setMutationSuccess] = useState(false)
 
   const { token } = useDecodeToken()
 
@@ -44,7 +37,10 @@ export default function OtherActions() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: inputValue, description: "placeholder" }),
+        body: JSON.stringify({
+          name: newFieldInputValue,
+          description: "placeholder",
+        }),
       })
 
       if (!response.ok) throw new Error()
@@ -54,7 +50,7 @@ export default function OtherActions() {
     },
     onSuccess: () => {
       readMutation.mutate()
-      setInputValue("")
+      setMutationSuccess(true)
     },
   })
 
@@ -79,162 +75,150 @@ export default function OtherActions() {
     },
     onError: () => {
       setMutationError("Nie udało się załadować kierunków studiów")
-      setShouldFetch(true)
     },
     onSuccess: (data: FieldOfStudy[]) => {
       setFieldsOfStudy(data)
-      setLoading(false)
     },
   })
 
   // UPDATE
   const updateMutation = useMutation({
     mutationFn: async () => {
-      if (selectedId === null) throw new Error()
-      const response = await fetch(`${apiUrl}/field_of_study/${selectedId}/`, {
+      if (editedId === null) throw new Error()
+      const response = await fetch(`${apiUrl}/field_of_study/${editedId}/`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: inputValue, description: "placeholder" }),
+        body: JSON.stringify({
+          name: editedNewValue,
+          description: "placeholder",
+        }),
       })
 
       if (!response.ok) throw new Error()
     },
     onError: () => {
       setMutationError("Nie udało się edytować kierunku studiów")
+      setEditedId(null)
+      setEditedNewValue("")
+      setEditedOldValue("")
     },
     onSuccess: () => {
       readMutation.mutate()
-      setInputValue("")
-      setSelectedId(null)
-    },
-  })
-
-  // DELETE
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (selectedId === null) throw new Error()
-      const response = await fetch(`${apiUrl}/field_of_study/${selectedId}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (!response.ok) throw new Error()
-    },
-    onError: () => {
-      setMutationError("Nie udało się usunąć kierunku studiów")
-    },
-    onSuccess: () => {
-      readMutation.mutate()
-      setSelectedId(null)
+      setMutationSuccess(true)
+      setEditedId(null)
+      setEditedNewValue("")
+      setEditedOldValue("")
     },
   })
 
   useEffect(() => {
-    if (action === "read" && shouldFetch) {
+    if (shouldFetch && token) {
       readMutation.mutate()
       setShouldFetch(false)
     }
-  }, [action, readMutation, shouldFetch])
+  }, [readMutation, shouldFetch, token])
 
   useEffect(() => {
     if (mutationError) {
       toast.error("Nie udało się wykonać akcji", {
         description: mutationError,
       })
+      setMutationError(null)
     }
-  }, [mutationError])
+    if (mutationSuccess) {
+      toast.success("Akcja wykonana pomyślnie.", {
+        description: "Zapisano zmiany.",
+      })
+      setMutationSuccess(false)
+    }
+  }, [mutationError, mutationSuccess])
+
+  if (!token) return null
+
+  if (!fieldsOfStudy) {
+    toast.error("Nie udało się pobrać kierunków studiów.", {
+      description: "Odśwież stronę",
+    })
+    return <h1>Błąd</h1> // poprawić
+  }
 
   return (
     <div className="space-y-4">
       <Label className="text-3xl">Zarządzaj kierunkami studiów</Label>
-      <Select onValueChange={(value) => setAction(value as CrudAction)}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Wybierz akcję" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="read">Zobacz kierunki</SelectItem>
-          <SelectItem value="create">Dodaj kierunek</SelectItem>
-          <SelectItem value="update">Zmień nazwę kierunku</SelectItem>
-          <SelectItem value="delete">Usuń kierunek</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {action === "read" && (
-        <div>
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
-            <ul>
-              {fieldsOfStudy.map((f) => (
-                <li key={f.id}>{f.name}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {(action === "create" || action === "update") && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (action === "create") createMutation.mutate()
-            else updateMutation.mutate()
+      <div className="flex">
+        <Label className="mr-4">Dodaj kierunek: </Label>
+        <Input
+          className="w-48"
+          onInput={(e) => setNewFieldInputValue(e.currentTarget.value)}
+          onChange={(e) => setNewFieldInputValue(e.currentTarget.value)}
+        />
+        <Button
+          onClick={() => {
+            createMutation.mutate()
           }}
-          className="space-y-2"
         >
-          {action === "update" && (
-            <Select onValueChange={(val) => setSelectedId(Number(val))}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Wybierz kierunek" />
-              </SelectTrigger>
-              <SelectContent>
-                {fieldsOfStudy.map((f) => (
-                  <SelectItem key={f.id} value={f.id.toString()}>
-                    {f.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Nazwa kierunku"
-          />
-          <Button type="submit">
-            {action === "create" ? "Dodaj" : "Aktualizuj"}
-          </Button>
-        </form>
-      )}
-
-      {action === "delete" && (
-        <div className="space-y-2">
-          <Select onValueChange={(val) => setSelectedId(Number(val))}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Wybierz kierunek do usunięcia" />
-            </SelectTrigger>
-            <SelectContent>
-              {fieldsOfStudy.map((f) => (
-                <SelectItem key={f.id} value={f.id.toString()}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={() => deleteMutation.mutate()}
-            disabled={selectedId === null}
-          >
-            Usuń
-          </Button>
-        </div>
-      )}
+          Dodaj
+        </Button>
+      </div>
+      {fieldsOfStudy.map((fieldOfStudy) => {
+        if (fieldOfStudy.id === editedId) {
+          return (
+            <div className="flex" key={fieldOfStudy.id}>
+              <Input
+                className="w-48"
+                onInput={(e) => setEditedNewValue(e.currentTarget.value)}
+                onChange={(e) => setEditedNewValue(e.currentTarget.value)}
+                value={editedId ? editedNewValue : fieldOfStudy.name}
+              />
+              <Button
+                onClick={() => {
+                  updateMutation.mutate()
+                }}
+                variant="outline"
+              >
+                Zapisz
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditedId(null)
+                  setFieldsOfStudy((curFields) =>
+                    curFields.map((curField) =>
+                      curField.id === editedId
+                        ? { ...curField, name: editedOldValue }
+                        : curField,
+                    ),
+                  )
+                  setEditedNewValue("")
+                  setEditedOldValue("")
+                }}
+                variant="secondary"
+              >
+                Anuluj
+              </Button>
+            </div>
+          )
+        } else {
+          return (
+            <div className="flex" key={fieldOfStudy.id}>
+              <Label className="mr-4 font-semibold">{fieldOfStudy.name}</Label>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditedId(fieldOfStudy.id)
+                  setEditedNewValue(fieldOfStudy.name)
+                  setEditedOldValue(fieldOfStudy.name)
+                }}
+              >
+                <ArrowLeft />
+                Edytuj nazwę
+              </Button>
+            </div>
+          )
+        }
+      })}
     </div>
   )
 }
