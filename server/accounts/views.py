@@ -7,7 +7,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from django.core.mail import send_mail
 from django.conf import settings
-from django.urls import reverse
 from .models import OneTimePasswordLink
 from django.utils.http import urlencode
 from django.http import HttpResponseGone
