@@ -26,6 +26,9 @@ import useDecodeToken from "@/hooks/useDecodeToken"
 import type { NavigationItem } from "@/util/types"
 import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
+import { useMutation } from "@tanstack/react-query"
+import apiUrl from "@/util/apiUrl"
+import { toast } from "sonner"
 
 interface NavbarProps {
   navItems: NavigationItem[]
@@ -195,27 +198,75 @@ export function Navbar({ navItems, userRoleHref, roleName }: NavbarProps) {
 export function StudentTopMenu() {
   const { tokenPayload } = useDecodeToken()
 
+  const [ownThesisId, setOwnThesisId] = useState(null)
+  const [shouldFetch, setShouldFetch] = useState(true)
+  const [loading, setLoading] = useState(true)
+
+  const ownThesisFetch = useMutation({
+    mutationFn: async () => {
+      setLoading(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/student/own_thesis`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Nie udało się pobrać Twojej pracy")
+      }
+
+      const data = await response.json()
+
+      return data.id
+    },
+    onError: (e) => {
+      toast.error(e.message, {
+        description: "Zakładka 'Mój temat' nie będzie działać",
+      })
+      setLoading(false)
+    },
+    onSuccess: (thesisId) => {
+      setOwnThesisId(thesisId)
+      setLoading(false)
+    },
+  })
+
+  useEffect(() => {
+    if (shouldFetch) {
+      setShouldFetch(false)
+      ownThesisFetch.mutate()
+    }
+  }, [ownThesisFetch, shouldFetch])
+
   if (!tokenPayload) return null
 
   return (
-    <Navbar
-      navItems={[
-        {
-          href: "/protected/student/theses/1",
-          text: "Mój Temat",
-        },
-        {
-          href: "/protected/student/theses",
-          text: "Lista tematów",
-        },
-        {
-          href: "/protected/student/supervisors",
-          text: "Lista promotorów",
-        },
-      ]}
-      userRoleHref="student"
-      roleName="Student"
-    />
+    <>
+      {loading ? (
+        "Wczytywanie..."
+      ) : (
+        <Navbar
+          navItems={[
+            {
+              href: `/protected/student/theses/${ownThesisId}`,
+              text: "Mój Temat",
+            },
+            {
+              href: "/protected/student/theses",
+              text: "Lista tematów",
+            },
+            {
+              href: "/protected/student/supervisors",
+              text: "Lista promotorów",
+            },
+          ]}
+          userRoleHref="student"
+          roleName="Student"
+        />
+      )}
+    </>
   )
 }
 

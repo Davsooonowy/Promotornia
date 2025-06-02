@@ -14,7 +14,6 @@ import { toast } from "sonner"
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
   ["deleteUsers", "Usuń użytkowników"],
-  ["sendEmail", "Wyślij e-mail do użytkowników"],
 ])
 
 export default function ManageUsers() {
@@ -28,7 +27,11 @@ export default function ManageUsers() {
   // action dialog triggered when "Przejdź dalej" button clicked
   const [action, setAction] = useState<string | null>(null) // possible values: addUsers, deleteUsers, sendEmail
   const [expirationDate, setExpirationDate] = useState<Date>(new Date())
-  const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
+
+  const [chosenFieldsOfStudyCount, setChosenFieldsOfStudyCount] = useState(0)
+  const [chosenFieldsOfStudy, setChosenFieldsOfStudy] = useState<
+    FieldOfStudy[]
+  >([])
 
   const actionMutation = useMutation({
     mutationFn: async () => {
@@ -60,28 +63,55 @@ export default function ManageUsers() {
 
       try {
         const token = localStorage.getItem("token")
+        let body
+        let method
+        if (action === "addUsers") {
+          if (chosenFieldsOfStudy.length === 0) {
+            toast.error("Akcja nie powiodła się.", {
+              description: "Podaj kierunki studiów",
+            })
+            return
+          }
+          const uniqueIds = new Set(chosenFieldsOfStudy.map((f) => f.id))
+          if (uniqueIds.size !== chosenFieldsOfStudy.length) {
+            toast.error("Akcja nie powiodła się.", {
+              description:
+                "Ten sam kierunek studiów został wybrany więcej niż raz.",
+            })
+            return
+          }
+          if (!expirationDate) {
+            toast.error("Akcja nie powiodła się.", {
+              description: "Podaj datę wygaśnięcia kont",
+            })
+            return
+          }
+          body = {
+            userType,
+            newUsers: newUsers.map((newUser) => ({
+              email: newUser.email,
+            })),
+            expirationDate: expirationDate.toISOString().split("T")[0],
+            chosenFieldsOfStudy: chosenFieldsOfStudy.map((field) => ({
+              id: field.id,
+            })),
+          }
+          method = "POST"
+        } else if (action === "deleteUsers") {
+          body = {
+            usersToDelete: newUsers.map((newUser) => ({
+              email: newUser.email,
+            })),
+          }
+          method = "DELETE"
+        }
         const response = await fetch(`${apiUrl}/dean/users/`, {
-          method: action === "addUsers" ? "POST" : "DELETE",
+          method: method,
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(
-            action === "addUsers"
-              ? {
-                  userType,
-                  newUsers: newUsers.map((newUser) => ({
-                    email: newUser.email,
-                  })),
-                  expirationDate: expirationDate.toISOString().split("T")[0],
-                  fieldOfStudy,
-                }
-              : {
-                  usersToDelete: newUsers.map((newUser) => ({
-                    email: newUser.email,
-                  })),
-                },
-          ),
+          body: JSON.stringify(body),
         })
 
         if (response.ok) {
@@ -154,8 +184,10 @@ export default function ManageUsers() {
           action={action}
           expirationDate={expirationDate}
           setExpirationDate={setExpirationDate}
-          setFieldOfStudy={setFieldOfStudy}
-          fieldOfStudy={fieldOfStudy}
+          setChosenFieldsOfStudy={setChosenFieldsOfStudy}
+          chosenFieldsOfStudy={chosenFieldsOfStudy}
+          setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
+          chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
           actionMutation={actionMutation}
         />
       </div>

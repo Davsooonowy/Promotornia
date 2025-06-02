@@ -1,9 +1,11 @@
-# Endpoint: POST /dean/new_users/
+# Endpoint: POST /dean/users/
 
 **Opis:**
 Zapisuje w bazie danych użytkowników z podanymi e-mailami i wygenerowanymi hasłami oraz wysyła na te e-maile wygenerowane hasła.
 
 ## Ciało
+
+!!! Stare !!!
 
 | Nazwa          | Typ                         | Wymagany | Opis                                                          |
 | -------------- | --------------------------- | -------- | ------------------------------------------------------------- |
@@ -11,6 +13,17 @@ Zapisuje w bazie danych użytkowników z podanymi e-mailami i wygenerowanymi has
 | newUsers       | List[{email: string}]       | Tak      | Lista emaili użytkowników jednego typu (student lub promotor) |
 | expirationDate | Date                        | Tak      | Data ważności kont dodawanych użytkowników                    |
 | fieldOfStudy   | {id: number, field: string} | Tak      | Kierunek studiów studenta/promotora                           |
+
+!!! Nowe !!!
+
+```json
+{
+  "userType": "supervisor",
+  "newUsers": [{"email": "supervisor1@agh.edu.pl"}, {"email": "supervisor2@agh.edu.pl"}],
+  "expirationDate": "tak samo jak było",
+  "chosenFieldsOfStudy": [{"id": 1}, {"id": 2}]
+}
+```
 
 headers: {
 Authorization: "Bearer TUTAJ_TOKEN",
@@ -334,16 +347,15 @@ Authorization: `Bearer ${token}`,
 
 ## Ciało
 
-| Nazwa | Typ    | Wymagany | Opis           |
-| ----- | ------ | -------- | -------------- |
+| Nazwa | Typ    | Wymagany | Opis                |
+| ----- | ------ | -------- | ------------------- |
 | field | string | Tak      | Nowa nazwa kierunku |
 
 ## Parametry
 
-| Nazwa | Typ    | Wymagany | Opis           |
-| ----- | ------ | -------- | -------------- |
-| id | string | Tak      | id edytowanego kierunku |
-
+| Nazwa | Typ    | Wymagany | Opis                    |
+| ----- | ------ | -------- | ----------------------- |
+| id    | string | Tak      | id edytowanego kierunku |
 
 # Endpoint DELETE /fieldsOfStudy/{id}
 
@@ -352,9 +364,9 @@ Usuwa kierunek studiów o danym id
 
 ## Parametry
 
-| Nazwa | Typ    | Wymagany | Opis           |
-| ----- | ------ | -------- | -------------- |
-| id | string | Tak      | id usuwanego kierunku |
+| Nazwa | Typ    | Wymagany | Opis                  |
+| ----- | ------ | -------- | --------------------- |
+| id    | string | Tak      | id usuwanego kierunku |
 
 # Endpoint PUT /theses/${thesisId}/status/edit
 
@@ -397,6 +409,16 @@ Status może się zmienić:
 (4) tu też chyba po prostu zmieniany jest status na backendzie, promotor nie może edytować zawartości pracy
 (5) `reservedBy` jest null, promotor może edytować zawartość pracy
 
+## Ciało
+
+Przykładowy json:
+
+```json
+{
+  "status": "Zarezerwowany"
+}
+```
+
 **Odpowiedź:**
 Brak specyfikacji
 
@@ -424,27 +446,29 @@ Przykładowy json:
 Zwróć listę dostępnych prac dyplomowych
 
 headers: {
-  Authorization: "Bearer TUTAJ_TOKEN",
+Authorization: "Bearer TUTAJ_TOKEN",
 }
 
 ## Parametry
-| Nazwa  | Typ    | Wymagany | Opis                       | Default |
-|--------|--------|----------|----------------------------|---------|
-| page | number | Nie | Numer strony | 1 |
-| fieldOfStudy | number | Nie | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None` | `None` |
-| tags | List[number] | Nie | Lista tagów do filtracji. Podawane w formacie `tags=1,2,3` | `None` |
-| available | boolean | Nie | Flaga czy dany temat pracy jest zajęty czy nie | `None` |
-| order | string | Nie | Wartość po której powinny być porządkowane dane. Na ten moment jedyne dozwolone to `name`, `supervisor`, `date` | `None` |
-| ascending | boolean | Nie | Kolejność porządku | `True` |
-| search | string | Nie | Fraza do wyszukania (szuka po promotorach i nazwach tematów) | `None` |
+
+| Nazwa        | Typ          | Wymagany | Opis                                                                                                            | Default |
+| ------------ | ------------ | -------- | --------------------------------------------------------------------------------------------------------------- | ------- |
+| page         | number       | Nie      | Numer strony                                                                                                    | 1       |
+| fieldOfStudy | number       | Nie      | ID kierunku studiów do filtracji. Nie filtruje jeśli jest `None`                                                | `None`  |
+| tags         | List[number] | Nie      | Lista tagów do filtracji. Podawane w formacie `tags=1,2,3`                                                      | `None`  |
+| available    | boolean      | Nie      | Flaga czy dany temat pracy jest zajęty czy nie                                                                  | `None`  |
+| order        | string       | Nie      | Wartość po której powinny być porządkowane dane. Na ten moment jedyne dozwolone to `name`, `supervisor`, `date` | `None`  |
+| ascending    | boolean      | Nie      | Kolejność porządku                                                                                              | `True`  |
+| search       | string       | Nie      | Fraza do wyszukania (szuka po promotorach i nazwach tematów)                                                    | `None`  |
 
 ## Odpowiedź
+
 `User = {id: number, email: string, first_name: string, last_name: string}`
 
 `FieldOfStudy = {id: number, name: string}`
 
 **Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
-| Nazwa  | Typ    | Wymagany | Opis                       |
+| Nazwa | Typ | Wymagany | Opis |
 |--------|--------|----------|----------------------------|
 | id | number | | Identyfikator pracy |
 | name | string | | Nazwa pracy |
@@ -454,17 +478,17 @@ headers: {
 | tags | List[{id: number, name: string}] | | Lista tagów |
 | status | string | | Status pracy dyplomowej |
 
-
 # Endpoint GET /supervisors/list?page&fieldOfStudy&available&order&ascending&search
 
 **Opis:**
 Zwróć listę promotorów
 
 headers: {
-  Authorization: "Bearer TUTAJ_TOKEN",
+Authorization: "Bearer TUTAJ_TOKEN",
 }
 
 ## Parametry
+
 Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po imieniu i nazwisku promotora, `order` może być jednym z `[free_spots, last_name]`
 
 ## Odpowiedź
@@ -473,16 +497,15 @@ Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po
 
 **Odpowiedzią jest {supervisors: List[Supervisor]}. Struktura `Supervisor` poniżej**
 
-
-| Nazwa  | Typ    | Wymagany | Opis                       |
-|--------|--------|----------|----------------------------|
-| id | number | | ID promotora |
-| email | string | | |
-| firstName | string | | |
-| lastName | string | | |
-| fieldOfStudy | FieldOfStudy | | Kierunek + wydział |
-| freeSpots | number | | Liczba wolnych miejsc |
-| totalSpots | number | | Liczba wolnych + zajętych miejsc |
+| Nazwa        | Typ          | Wymagany | Opis                             |
+| ------------ | ------------ | -------- | -------------------------------- |
+| id           | number       |          | ID promotora                     |
+| email        | string       |          |                                  |
+| firstName    | string       |          |                                  |
+| lastName     | string       |          |                                  |
+| fieldOfStudy | FieldOfStudy |          | Kierunek + wydział               |
+| freeSpots    | number       |          | Liczba wolnych miejsc            |
+| totalSpots   | number       |          | Liczba wolnych + zajętych miejsc |
 
 # Endpoint POST /supervisor/tags
 
@@ -490,15 +513,15 @@ Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po
 Dodaje nowy tag
 
 headers: {
-  Content-Type: "application/json"
-  Authorization: "Bearer TUTAJ_TOKEN",
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
 }
 
 ## Ciało
-| Nazwa  | Typ    | Wymagany | Opis                       | Default |
-|--------|--------|----------|----------------------------|---------|
-| name | string | tak | Nazwa tagu | - |
 
+| Nazwa | Typ    | Wymagany | Opis       | Default |
+| ----- | ------ | -------- | ---------- | ------- |
+| name  | string | tak      | Nazwa tagu | -       |
 
 # Endpoint PUT /theses/{thesisId}/edit
 
@@ -540,3 +563,95 @@ Dla fieldOfStudy i tags zapewne wykorzystywane będzie tylko id, ale name nie sz
 
 Warto zweryfikować na backendzie czy status jest "Ukryty", jeśli zmieniony jest kierunek studiów (Uwaga! jeśli jest zmieniony, czyli trzeba porównać z obecnym w bazie), bo założenie jest takie, że kierunek studiów można modyfikować tylko, jeśli status to "Ukryty"
 Poza tym nie powinno się dopuścić do sytuacji, w której temat jest modyfikowany, a status jest co najmniej "Student zaakceptowany", czyli jeśli status jest co najmniej "Student zaakceptowany", to ten endpoint nie powinien działać
+
+# Endpoint GET /thesis/supervisor/{supervisorId}/
+
+**Opis:**
+Zwraca prace dyplomowe posiadane przez danego promotora.
+
+headers: {
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Odpowiedź
+
+`User = {id: number, email: string, first_name: string, last_name: string, title: string}`
+
+`FieldOfStudy = {id: number, name: string}`
+
+**Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
+| Nazwa | Typ | Wymagany | Opis |
+|--------|--------|----------|----------------------------|
+| id | number | | Identyfikator pracy |
+| name | string | | Nazwa pracy |
+| owner | User | | Opiekun pracy |
+| field_of_study | FieldOfStudy | | Kierunek studiów (wraz z wydziałem) gdzie realizowana jest praca |
+| date_of_creation | DateTime | | Data utworzenia |
+| tags | List[{id: number, name: string}] | | Lista tagów |
+| status | string | | Status pracy dyplomowej |
+
+To samo co w endpoincie z listowaniem prac.
+
+# Endpoint GET /supervisors/{supervisorId}/
+
+headers: {
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Odpowiedź
+
+`FieldOfStudy = {id: number, name: string, description: string}`
+
+| Nazwa          | Typ          | Wymagany | Opis                             |
+| -------------- | ------------ | -------- | -------------------------------- |
+| id             | number       |          | ID promotora                     |
+| email          | string       |          |                                  |
+| first_name     | string       |          |                                  |
+| last_name      | string       |          |                                  |
+| title          | string       |          | Stopień promotora                |
+| field_of_study | FieldOfStudy |          | Kierunek + wydział               |
+| free_spots     | number       |          | Liczba wolnych miejsc            |
+| total_spots    | number       |          | Liczba wolnych + zajętych miejsc |
+
+# Endpoint GET /user/fields_of_study/
+
+**Opis**
+
+Zwraca listę kierunków studiów, na które przypisany jest dany użytkownik
+
+headers: {
+Content-Type: "application/json"
+Authorization: "Bearer TUTAJ_TOKEN",
+}
+
+## Odpowiedź
+
+```json
+{
+  "fields_of_study": [
+    {
+      "id": 1,
+      "field": "Informatyka"
+    },
+    {
+      "id": 2,
+      "field": "Cyberbezpieczeństwo"
+    }
+  ]
+}
+```
+
+# Endpoint DELETE /theses/{thesisId}/
+
+**Opis:**
+Usuwa pracę z bazy, powinno działać tylko, jeśli praca ma status "Ukryty"
+
+**Ciało:**
+
+```json
+{
+  "id": 1
+}
+```

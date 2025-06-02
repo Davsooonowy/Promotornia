@@ -169,3 +169,16 @@ class FieldOfStudyView(APIView):
         field_of_study = models.FieldOfStudy.objects.get(pk=pk)
         field_of_study.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class FieldOfStudyListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        fields_of_study = models.FieldOfStudy.objects.filter(
+            systemuser=request.user
+        )
+        data = serializers.FieldOfStudySerializer(fields_of_study, many=True).data
+        for fos in data:
+            fos.pop("description", None)
+        return Response({"fields_of_study": data}, status=status.HTTP_200_OK)

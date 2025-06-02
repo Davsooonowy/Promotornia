@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { UserRole } from "./enums"
 interface NavigationItem {
   href: string
   text: string
@@ -25,7 +26,7 @@ type LoginFormData = z.infer<typeof LoginFormDataSchema>
 
 interface JwtPayload {
   user_id: number
-  role: string
+  role: UserRole
 }
 
 const NewUserScheme = z.object({
@@ -95,5 +96,6 @@ export type {
   Supervisor,
   ThesisStatus,
   ThesisDetails,
+  UserRole,
 }
 export { LoginFormDataSchema, NewUserScheme, PasswordFormDataSchema }

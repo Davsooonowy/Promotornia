@@ -204,9 +204,6 @@ export default function OwnTheses() {
                         >
                           Szczegóły
                         </Button>
-                        <Button size="sm" className="cursor-pointer">
-                          Edytuj
-                        </Button>
                       </div>
                     </div>
                   </div>
