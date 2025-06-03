@@ -114,12 +114,10 @@ export default function Supervisor() {
                 )}
               </div>
             </div>
-            {supervisor.description && (
-              <div>
-                <Label>Opis:</Label>
-                <p className="mt-1">{supervisor.description}</p>
-              </div>
-            )}
+            <div>
+              <Label>Opis:</Label>
+              <p className="mt-1">{supervisor.description}</p>
+            </div>
           </CardContent>
         </div>
       </div>

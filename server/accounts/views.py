@@ -125,25 +125,16 @@ class FieldOfStudyListView(APIView):
         return Response({"fields_of_study": data}, status=status.HTTP_200_OK)
     
 class SupervisorDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, supervisor_id):
         try:
-            taken_statuses = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
-            supervisor = models.SystemUser.objects.annotate(
-                full_name=Concat(F('first_name'), Value(' '), F('last_name')),
-                taken_spots=Count(
-                    'owned_theses',
-                    filter=Q(owned_theses__status__in=taken_statuses)
-                ),
-                free_spots=ExpressionWrapper(
-                    F('total_spots') - F('taken_spots'),
-                    output_field=IntegerField()
-                )
-            ).get(id=supervisor_id, is_supervisor=True)
+            supervisor = models.SystemUser.objects.get(id=supervisor_id, is_supervisor=True)
         except models.SystemUser.DoesNotExist:
             return Response(
                 {"detail": "Nie znaleziono promotora o podanym ID."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = serializers.SupervisorSerializer(supervisor)
+        serializer = serializers.SupervisorViewSerializer(supervisor)
         return Response(serializer.data, status=status.HTTP_200_OK)

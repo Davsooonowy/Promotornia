@@ -172,3 +172,20 @@ class PersonalDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SystemUser
         fields = ('first_name', 'last_name', 'email')
+
+class SupervisorViewSerializer(serializers.ModelSerializer):
+    free_spots = serializers.SerializerMethodField()
+    total_spots = serializers.IntegerField()
+    field_of_study = FieldOfStudySerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.SystemUser
+        fields = (
+            'id', 'email', 'title', 'first_name', 'last_name',
+            'field_of_study', 'total_spots', 'free_spots', 'description'
+        )
+
+    def get_free_spots(self, obj):
+        taken_statuses = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
+        taken_spots = obj.owned_theses.filter(status__in=taken_statuses).count()
+        return obj.total_spots - taken_spots
