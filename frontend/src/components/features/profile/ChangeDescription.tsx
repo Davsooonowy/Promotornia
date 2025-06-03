@@ -16,8 +16,8 @@ import { Textarea } from "@/components/ui/textarea"
 export default function ChangeDescription() {
   const [editMode, setEditMode] = useState(false)
   const [description, setDescription] = useState<{
-    initial: string,
-    current: string,
+    initial: string
+    current: string
   }>({
     initial: "",
     current: "",
@@ -40,9 +40,7 @@ export default function ChangeDescription() {
       })
 
       if (!response.ok) {
-        throw new Error(
-            `Błąd ${response.status}: ${response.statusText}`,
-        )
+        throw new Error(`Błąd ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()
@@ -52,7 +50,10 @@ export default function ChangeDescription() {
       setError(err.message)
     },
     onSuccess: (data) => {
-      setDescription({ current: data.description || "", initial: data.description || "" })
+      setDescription({
+        current: data.description || "",
+        initial: data.description || "",
+      })
       setLoading(false)
     },
   })
@@ -81,7 +82,8 @@ export default function ChangeDescription() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(
-          errorData.message || `Błąd ${response.status}: ${response.statusText}`
+          errorData.message ||
+          `Błąd ${response.status}: ${response.statusText}`,
         )
       }
 
@@ -128,7 +130,7 @@ export default function ChangeDescription() {
                 onChange={(e) =>
                   setDescription((desc) => ({
                     ...desc,
-                    current: e.target.value
+                    current: e.target.value,
                   }))
                 }
                 className="min-h-[120px]"
@@ -155,7 +157,8 @@ export default function ChangeDescription() {
                     disabled={descriptionMutation.isPending}
                   >
                     {descriptionMutation.isPending
-                        ? "Zapisywanie..." : "Zapisz"}
+                      ? "Zapisywanie..."
+                      : "Zapisz"}
                   </Button>
                   <Button
                     variant="outline"
