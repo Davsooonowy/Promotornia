@@ -1,7 +1,6 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
@@ -16,7 +15,10 @@ import { Textarea } from "@/components/ui/textarea"
 
 export default function ChangeDescription() {
   const [editMode, setEditMode] = useState(false)
-  const [description, setDescription] = useState<{ initial: string; current: string }>({
+  const [description, setDescription] = useState<{
+    initial: string;
+    current: string
+  }>({
     initial: "",
     current: "",
   })

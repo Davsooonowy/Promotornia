@@ -12,7 +12,7 @@ export default function Profile() {
         <ChangePersonalData />
         <ChangePassword />
       </div>
-      <div className="w-2/3 space-y-3 mt-21 ml-20">
+      <div className="mt-21 ml-20 w-2/3 space-y-3">
         <ChangeDescription />
       </div>
       {/* <div className="ml-3 w-2/3 space-y-3">
