@@ -502,6 +502,7 @@ export default function Thesis() {
                     thesis={thesis}
                     setThesis={setThesis}
                     allTags={allTags}
+                    allTagsFetch={allTagsFetch}
                   />
                 )}
               </div>
@@ -563,6 +564,15 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Student zaakceptowany"
+                />
+              )}
+              {thesis.status === "Zarezerwowany" && editionMode && (
+                <EditThesisStatusDialog
+                  thesis={thesis}
+                  setThesis={setThesis}
+                  changeThesisStatusMutation={changeThesisStatusMutation}
+                  newStatus="Dostępny"
+                  oldStatus="Zarezerwowany"
                 />
               )}
 

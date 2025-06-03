@@ -22,12 +22,15 @@ export default function EditThesisStatusDialog(props: {
     unknown
   >
   newStatus: ThesisStatus | "Hide or publish"
+  oldStatus?: ThesisStatus
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   let title
   if (props.newStatus === "Hide or publish") {
     title =
       props.thesis?.status !== "Ukryty" ? "Ukryj pracę" : "Opublikuj pracę"
+  } else if (props.newStatus === "Dostępny") {
+    title = "Usuń rezerwację studenta"
   } else if (props.newStatus === "Student zaakceptowany") {
     title = "Zaakceptuj studenta"
   } else if (props.newStatus === "Zarezerwowany") {
@@ -108,6 +111,13 @@ export default function EditThesisStatusDialog(props: {
             <li>
               Promotor nie będzie już mógł modyfikować zawartości pracy (już
               teraz nie może, bo status to &quot;Student zaakceptowany&quot;)
+            </li>
+          </ul>
+        )}
+        {props.newStatus === "Dostępny" && (
+          <ul>
+            <li className="text-red-500">
+              Obecna rezerwacja studenta zostanie anulowana
             </li>
           </ul>
         )}

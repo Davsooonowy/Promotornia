@@ -655,3 +655,16 @@ Usuwa pracę z bazy, powinno działać tylko, jeśli praca ma status "Ukryty"
   "id": 1
 }
 ```
+
+# Endpoint POST /supervisor/tags/
+
+**Opis:**
+Dodaje nowy tag
+
+**Ciało:**
+
+```json
+{
+  "name": "Algorytmy"
+}
+```

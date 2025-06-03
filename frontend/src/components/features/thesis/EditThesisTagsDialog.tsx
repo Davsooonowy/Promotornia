@@ -18,16 +18,50 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Dispatch, SetStateAction } from "react"
+import { Input } from "@/components/ui/input"
+import { useMutation, UseMutationResult } from "@tanstack/react-query"
+import apiUrl from "@/util/apiUrl"
+import { toast } from "sonner"
 
 export default function EditThesisTagsDialog(props: {
   thesis: ThesisDetails | null
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   allTags: Tag[] | null
+  allTagsFetch: UseMutationResult<Tag[], Error, void, unknown>
 }) {
   const [valueBeforeEdition, setValueBeforeEdition] = useState<Tag[] | null>(
     null,
   )
   const [dialogOpen, setDialogOpen] = useState(false)
+
+  const [newTagName, setNewTagName] = useState("")
+
+  const newTagMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/supervisor/tags/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newTagName,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error("Nie udało się dodać tagu.")
+      }
+    },
+    onError: (e) => {
+      toast.error(e.message)
+    },
+    onSuccess: () => {
+      setNewTagName("")
+      props.allTagsFetch.mutate()
+      toast.success("Dodano tag")
+    },
+  })
 
   const handleCancel = () => {
     props.setThesis((prev) =>
@@ -94,38 +128,54 @@ export default function EditThesisTagsDialog(props: {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-h-[300px] w-56 overflow-auto">
-            {props.allTags?.map((tag) => {
-              return (
-                <DropdownMenuItem
-                  key={tag.id}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    toggleTag(tag.id, tag.name)
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Checkbox
-                    checked={
-                      props.thesis
-                        ? props.thesis.tags
-                            .map((tag) => tag.id)
-                            .includes(tag.id)
-                        : false
-                    }
-                    id={`tag-${tag.id}`}
-                  />
-                  <Label
-                    htmlFor={`tag-${tag.id}`}
-                    className="flex-grow cursor-pointer"
+          <DropdownMenuContent className="max-h-[300px] w-80 overflow-auto">
+            {props.allTags?.length && props.allTags.length > 0 ? (
+              props.allTags?.map((tag) => {
+                return (
+                  <DropdownMenuItem
+                    key={tag.id}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      toggleTag(tag.id, tag.name)
+                    }}
+                    className="flex items-center gap-2"
                   >
-                    {tag.name}
-                  </Label>
-                </DropdownMenuItem>
-              )
-            })}
+                    <Checkbox
+                      checked={
+                        props.thesis
+                          ? props.thesis.tags
+                              .map((tag) => tag.id)
+                              .includes(tag.id)
+                          : false
+                      }
+                      id={`tag-${tag.id}`}
+                    />
+                    <Label
+                      htmlFor={`tag-${tag.id}`}
+                      className="flex-grow cursor-pointer"
+                    >
+                      {tag.name}
+                    </Label>
+                  </DropdownMenuItem>
+                )
+              })
+            ) : (
+              <Label>Brak tagów</Label>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
+        <div className="flex">
+          <Input
+            value={newTagName}
+            onInput={(e) => setNewTagName(e.currentTarget.value)}
+            onChange={(e) => setNewTagName(e.currentTarget.value)}
+          />
+          <Button onClick={() => newTagMutation.mutate()}>Dodaj tag</Button>
+        </div>
+        <Label className="text-red-500">
+          Uwaga! Przed dodaniem nowego tagu proszę się upewnić, że potrzebny tag
+          jeszcze nie istnieje!
+        </Label>
         <Button onClick={handleCancel}>Anuluj</Button>
         <Button onClick={handleSave}>Zapisz</Button>
       </DialogContent>
