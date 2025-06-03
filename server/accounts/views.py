@@ -138,3 +138,17 @@ class SupervisorDetailView(APIView):
 
         serializer = serializers.SupervisorViewSerializer(supervisor)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DescriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = serializers.DescriptionSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = serializers.DescriptionSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

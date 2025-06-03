@@ -189,3 +189,8 @@ class SupervisorViewSerializer(serializers.ModelSerializer):
         taken_statuses = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         taken_spots = obj.owned_theses.filter(status__in=taken_statuses).count()
         return obj.total_spots - taken_spots
+    
+class DescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SystemUser
+        fields = ('description',)

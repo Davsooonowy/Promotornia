@@ -2,6 +2,7 @@
 import ChangePersonalData from "@/components/features/profile/ChangePersonalData"
 import ChangePassword from "@/components/features/profile/ChangePassword"
 import LabelWithEmail from "@/components/features/profile/LabelWithEmail"
+import ChangeDescription from "@/components/features/profile/ChangeDescription"
 
 export default function Profile() {
   return (
@@ -10,6 +11,9 @@ export default function Profile() {
         <LabelWithEmail />
         <ChangePersonalData />
         <ChangePassword />
+      </div>
+      <div className="w-2/3 space-y-3 mt-21 ml-20">
+        <ChangeDescription />
       </div>
       {/* <div className="ml-3 w-2/3 space-y-3">
         <Label className="ml-3 text-3xl">Tagi zainteresowań:</Label>
