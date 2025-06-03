@@ -173,6 +173,11 @@ export default function Thesis() {
     tokenPayload &&
     thesis.reservedBy?.id === tokenPayload.user_id &&
     thesis.status === "Student zaakceptowany"
+  const canCancelReservation =
+    tokenPayload &&
+    thesis.reservedBy?.id === tokenPayload.user_id &&
+    (thesis.status === "Student zaakceptowany" ||
+      thesis.status === "Zarezerwowany")
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -287,7 +292,16 @@ export default function Thesis() {
                 />
               )}
 
-              {!canReserve && !canApprove && (
+              {canCancelReservation && (
+                <EditThesisStatusDialog
+                  thesis={thesis}
+                  setThesis={setThesis}
+                  changeThesisStatusMutation={changeThesisStatusMutation}
+                  newStatus="Dostępny"
+                />
+              )}
+
+              {!canReserve && !canApprove && !canCancelReservation && (
                 <div className="py-4 text-center">
                   <CheckCircle className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
                   <p className="text-muted-foreground text-sm">

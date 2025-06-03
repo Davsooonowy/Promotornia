@@ -28,6 +28,7 @@ export default function EditThesisTagsDialog(props: {
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   allTags: Tag[] | null
   allTagsFetch: UseMutationResult<Tag[], Error, void, unknown>
+  setHasUnsavedChanges: Dispatch<SetStateAction<boolean>>
 }) {
   const [valueBeforeEdition, setValueBeforeEdition] = useState<Tag[] | null>(
     null,
@@ -52,14 +53,17 @@ export default function EditThesisTagsDialog(props: {
       if (!response.ok) {
         throw new Error("Nie udało się dodać tagu.")
       }
+      const data = await response.json()
+      return data
     },
     onError: (e) => {
       toast.error(e.message)
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setNewTagName("")
       props.allTagsFetch.mutate()
       toast.success("Dodano tag")
+      toggleTag(data.id, data.name)
     },
   })
 
@@ -74,6 +78,7 @@ export default function EditThesisTagsDialog(props: {
 
   const handleSave = () => {
     setDialogOpen(false)
+    props.setHasUnsavedChanges(true)
   }
 
   const toggleTag = (tagId: number, tagName: string) => {

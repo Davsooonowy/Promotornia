@@ -30,7 +30,7 @@ export default function EditThesisStatusDialog(props: {
     title =
       props.thesis?.status !== "Ukryty" ? "Ukryj pracę" : "Opublikuj pracę"
   } else if (props.newStatus === "Dostępny") {
-    title = "Usuń rezerwację studenta"
+    title = "Usuń rezerwację"
   } else if (props.newStatus === "Student zaakceptowany") {
     title = "Zaakceptuj studenta"
   } else if (props.newStatus === "Zarezerwowany") {
