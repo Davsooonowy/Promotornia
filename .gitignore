@@ -1,1 +1,4 @@
 .idea/
+/server/accounts/migrations
+/server/theses/migrations
+/venv311

@@ -181,3 +181,32 @@ class FieldOfStudyListView(APIView):
         for fos in data:
             fos.pop("description", None)
         return Response({"fields_of_study": data}, status=status.HTTP_200_OK)
+    
+class SupervisorDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, supervisor_id):
+        try:
+            supervisor = models.SystemUser.objects.get(id=supervisor_id, is_supervisor=True)
+        except models.SystemUser.DoesNotExist:
+            return Response(
+                {"detail": "Nie znaleziono promotora o podanym ID."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = serializers.SupervisorViewSerializer(supervisor)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class DescriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = serializers.DescriptionSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        serializer = serializers.DescriptionSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
