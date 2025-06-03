@@ -16,8 +16,8 @@ import { Textarea } from "@/components/ui/textarea"
 export default function ChangeDescription() {
   const [editMode, setEditMode] = useState(false)
   const [description, setDescription] = useState<{
-    initial: string;
-    current: string
+    initial: string,
+    current: string,
   }>({
     initial: "",
     current: "",
@@ -40,7 +40,9 @@ export default function ChangeDescription() {
       })
 
       if (!response.ok) {
-        throw new Error(`Błąd ${response.status}: ${response.statusText}`)
+        throw new Error(
+            `Błąd ${response.status}: ${response.statusText}`,
+        )
       }
 
       const data = await response.json()
@@ -124,7 +126,10 @@ export default function ChangeDescription() {
                 disabled={!editMode}
                 value={description.current}
                 onChange={(e) =>
-                  setDescription((desc) => ({ ...desc, current: e.target.value }))
+                  setDescription((desc) => ({
+                    ...desc,
+                    current: e.target.value
+                  }))
                 }
                 className="min-h-[120px]"
               />
@@ -149,7 +154,8 @@ export default function ChangeDescription() {
                     onClick={handleSave}
                     disabled={descriptionMutation.isPending}
                   >
-                    {descriptionMutation.isPending ? "Zapisywanie..." : "Zapisz"}
+                    {descriptionMutation.isPending
+                        ? "Zapisywanie..." : "Zapisz"}
                   </Button>
                   <Button
                     variant="outline"
