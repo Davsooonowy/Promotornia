@@ -37,14 +37,14 @@ export default function Supervisor() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       const response = await fetch(
-        `${apiUrl}/user/supervisor/${numericSupervisorId}/`, 
+        `${apiUrl}/user/supervisor/${numericSupervisorId}/`,
         {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       )
 
       if (!response.ok) {
@@ -97,7 +97,8 @@ export default function Supervisor() {
         <div className="w-full space-y-6">
           <CardHeader className="space-y-2 text-2xl">
             <CardTitle>
-              Promotor: {supervisor.title && `${supervisor.title} `}{supervisor.first_name} {supervisor.last_name}
+              Promotor: {supervisor.title && `${supervisor.title} `}
+              {supervisor.first_name} {supervisor.last_name}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
