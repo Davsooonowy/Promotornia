@@ -83,7 +83,7 @@ export default function ChangeDescription() {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(
           errorData.message ||
-          `Błąd ${response.status}: ${response.statusText}`,
+            `Błąd ${response.status}: ${response.statusText}`,
         )
       }
 
