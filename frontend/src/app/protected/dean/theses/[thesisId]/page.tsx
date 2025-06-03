@@ -4,11 +4,12 @@ import { useMutation } from "@tanstack/react-query"
 import { useState, useEffect } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ThesisDetails } from "@/util/types"
-import { User } from "lucide-react"
+import type { ThesisDetails } from "@/util/types"
+import { User, BookOpen, Tag, GraduationCap, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Thesis() {
   const { thesisId } = useParams<{ thesisId: string }>()
@@ -93,61 +94,197 @@ export default function Thesis() {
     }
   }, [mutationError, mutationSuccessMessage])
 
-  if (thesisFetchError) return <h1>{thesisFetchError}</h1>
-
-  if (thesis)
+  if (thesisFetchError) {
     return (
-      <div className="w-full">
-        <div className="flex w-full border-y-2 px-4 py-4">
-          <div className="box-border w-3/5 space-y-3 rounded-none border-none">
-            <CardHeader className="flex flex-col items-start space-y-2 text-2xl">
-              <CardTitle>Temat: {thesis.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex w-2/3 flex-col items-start space-y-6">
-              <Label>
-                Kierunek:{" "}
-                {thesis.fieldOfStudy
-                  ? thesis.fieldOfStudy.name
-                  : "Coś poszło nie tak. Promotor nie ustawił kierunku studiów związanego z pracą."}
-              </Label>
-              <div className="space-x-2">
-                {thesis?.tags.length > 0
-                  ? thesis.tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ))
-                  : "Brak tagów"}
-              </div>
-              <Label>Promotor: {thesis.supervisor}</Label>
-              <Label>Opis tematu:</Label>
-              <p>{thesis.description}</p>
-              <Label>Wymagania wstępne:</Label>
-              <p>{thesis.prerequisitesDescription}</p>
-            </CardContent>
+      <div className="mx-auto w-full max-w-4xl">
+        <Card className="border-destructive/20">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="text-destructive mx-auto mb-4 h-12 w-12" />
+            <h2 className="mb-2 text-xl font-semibold">Błąd ładowania</h2>
+            <p className="text-muted-foreground">{thesisFetchError}</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (thesisFetch.isPending) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <Skeleton className="h-12 w-3/4 bg-[var(--skeleton-color)]" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <Skeleton className="h-64 w-full bg-[var(--skeleton-color)]" />
+            <Skeleton className="h-48 w-full bg-[var(--skeleton-color)]" />
           </div>
-          <div className="box-border flex w-2/5 flex-col space-y-3 rounded-none border-none">
-            <CardHeader className="space-y-2 text-2xl">
-              <div className="flex justify-between">
-                <CardTitle className="mt-1">
-                  Status tematu: {thesis.status}
-                </CardTitle>
-              </div>
-            </CardHeader>
-            {thesis.reservedBy && (
-              <CardContent className="space-y-3">
-                <Label>Student realizujący temat:</Label>
-                <div className="space-y-2 border-2 p-2">
-                  <Label>
-                    <User />
-                    {thesis.reservedBy.name} {thesis.reservedBy.surname}
-                  </Label>
-                  <Label>{thesis.reservedBy.email}</Label>
-                </div>
-              </CardContent>
-            )}
+          <div className="space-y-6">
+            <Skeleton className="h-32 w-full bg-[var(--skeleton-color)]" />
+            <Skeleton className="h-48 w-full bg-[var(--skeleton-color)]" />
           </div>
         </div>
       </div>
     )
+  }
+
+  if (!thesis) return null
+
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <div className="flex items-start gap-4">
+        <div className="bg-primary/10 rounded-full p-3">
+          <BookOpen className="text-primary h-6 w-6" />
+        </div>
+        <div className="flex-1">
+          <h1 className="mb-2 text-3xl font-bold">{thesis.title}</h1>
+          <div className="text-muted-foreground flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <User className="h-4 w-4" />
+              <span>{thesis.supervisor}</span>
+            </div>
+          </div>
+        </div>
+        <Badge
+          variant={thesis.status === "Dostępny" ? "default" : "secondary"}
+          className="px-3 py-1 text-sm"
+        >
+          {thesis.status}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Informacje podstawowe
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground text-sm font-medium">
+                  Kierunek studiów
+                </Label>
+                <p className="mt-1">
+                  {thesis.fieldOfStudy
+                    ? thesis.fieldOfStudy.name
+                    : "Nie określono kierunku"}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-sm font-medium">
+                  Tagi
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {thesis.tags.length > 0 ? (
+                    thesis.tags.map((tag) => (
+                      <Badge key={tag.id} variant="outline" className="gap-1">
+                        <Tag className="h-3 w-3" />
+                        {tag.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground text-sm">
+                      Brak tagów
+                    </span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Opis tematu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {thesis.description || "Brak opisu"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Wymagania wstępne</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {thesis.prerequisitesDescription || "Brak szczególnych wymagań"}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Status pracy</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Status:</span>
+                  <Badge
+                    variant={
+                      thesis.status === "Dostępny" ? "default" : "secondary"
+                    }
+                  >
+                    {thesis.status}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {thesis.reservedBy && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Student realizujący
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-muted-foreground text-sm font-medium">
+                      Imię i nazwisko
+                    </Label>
+                    <p className="mt-1">
+                      {thesis.reservedBy.name} {thesis.reservedBy.surname}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground text-sm font-medium">
+                      Email
+                    </Label>
+                    <p className="mt-1 text-sm">{thesis.reservedBy.email}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Promotor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label className="text-muted-foreground text-sm font-medium">
+                  Imię i nazwisko
+                </Label>
+                <p className="mt-1">{thesis.supervisor}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
 }

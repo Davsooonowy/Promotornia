@@ -1,74 +1,66 @@
 "use client"
-import { Label } from "@/components/ui/label"
 import apiUrl from "@/util/apiUrl"
 import { useQuery } from "@tanstack/react-query"
-import { useState } from "react"
-import { ErrorBoundary } from "@/components/ui/error-boundary"
-import { LoadingErrorState } from "@/components/ui/loading-error-state"
-import { getUserFriendlyErrorMessage } from "@/lib/error-handling"
-import { AlertCircle } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Mail, AlertCircle } from "lucide-react"
 
 export default function LabelWithEmail() {
-  const [email, setEmail] = useState<string | null>(null)
-
   const emailQuery = useQuery({
-    queryKey: ["email"],
+    queryKey: ["user-email"],
     queryFn: async () => {
       const token = localStorage.getItem("token")
-      try {
-        const response = await fetch(`${apiUrl}/user/personal_data/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        })
+      const response = await fetch(`${apiUrl}/user/personal_data/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-        if (!response.ok) {
-          throw new Error(`Błąd ${response.status}: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        setEmail(data.email)
-        return data.email
-      } catch (error) {
-        throw error
+      if (!response.ok) {
+        throw new Error(`Błąd ${response.status}: ${response.statusText}`)
       }
+
+      const data = await response.json()
+      return data.email
     },
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
+  if (emailQuery.isLoading) {
+    return (
+      <div className="flex items-center gap-3">
+        <Mail className="text-muted-foreground h-5 w-5" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-48" />
+        </div>
+      </div>
+    )
+  }
+
+  if (emailQuery.isError) {
+    return (
+      <div className="text-destructive flex items-center gap-3">
+        <AlertCircle className="h-5 w-5" />
+        <div>
+          <p className="font-medium">Błąd ładowania danych</p>
+          <p className="text-muted-foreground text-sm">
+            Nie udało się pobrać adresu email
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <ErrorBoundary context="email">
-      <LoadingErrorState
-        isLoading={emailQuery.isLoading}
-        isError={emailQuery.isError}
-        error={
-          emailQuery.error instanceof Error
-            ? emailQuery.error
-            : new Error("Unknown error")
-        }
-        context="email"
-        resetError={() => emailQuery.refetch()}
-      >
-        {email ? (
-          <Label className="ml-3 text-3xl">Profil, email: {email}</Label>
-        ) : (
-          <div className="ml-3 flex items-center gap-2 text-3xl">
-            <span>Profil</span>
-            {emailQuery.isError && (
-              <div className="text-destructive flex items-center gap-1 text-sm">
-                <AlertCircle className="h-4 w-4" />
-                <span>
-                  {getUserFriendlyErrorMessage(emailQuery.error, "email")}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </LoadingErrorState>
-    </ErrorBoundary>
+    <div className="flex items-center gap-3">
+      <Mail className="text-muted-foreground h-5 w-5" />
+      <div>
+        <p className="font-medium">Email</p>
+        <p className="text-muted-foreground text-sm">{emailQuery.data}</p>
+      </div>
+    </div>
   )
 }
