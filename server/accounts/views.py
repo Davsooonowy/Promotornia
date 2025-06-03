@@ -4,8 +4,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.db.models import Count, F, Q, Value, IntegerField, ExpressionWrapper
-from django.db.models.functions import Concat
 
 from django.core.mail import send_mail
 from django.conf import settings

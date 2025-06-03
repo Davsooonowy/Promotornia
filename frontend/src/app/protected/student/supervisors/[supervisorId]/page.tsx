@@ -36,13 +36,16 @@ export default function Supervisor() {
   const supervisorFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/user/supervisor/${numericSupervisorId}/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await fetch(
+        `${apiUrl}/user/supervisor/${numericSupervisorId}/`, 
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      )
 
       if (!response.ok) {
         throw new Error("Nie znaleziono promotora.")
