@@ -1,5 +1,2 @@
 .idea/
-.env
-/server/accounts/migrations
-/server/theses/migrations
 /venv311

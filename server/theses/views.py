@@ -88,29 +88,28 @@ class ThesisStatus(APIView):
         current_status = thesis.status
 
         valid_transitions = {
-            ("Ukryty", "Dostępny"): "supervisor",
-            ("Dostępny", "Ukryty"): "supervisor",
-            ("Zarezerwowany", "Ukryty"): "supervisor",
-            ("Dostępny", "Zarezerwowany"): "student",
-            ("Zarezerwowany", "Student zaakceptowany"): "supervisor",
-            ("Student zaakceptowany", "Zatwierdzony"): "student",
-            ("Zarezerwowany", "Dostępny"): "student",
-            ("Student zaakceptowany", "Dostępny"): "student",
+            ("Ukryty", "Dostępny"): ["supervisor"],
+            ("Dostępny", "Ukryty"): ["supervisor"],
+            ("Zarezerwowany", "Ukryty"): ["supervisor"],
+            ("Dostępny", "Zarezerwowany"): ["student"],
+            ("Zarezerwowany", "Student zaakceptowany"): ["supervisor"],
+            ("Student zaakceptowany", "Zatwierdzony"): ["student"],
+            ("Zarezerwowany", "Dostępny"): ["student", "supervisor"],
+            ("Student zaakceptowany", "Dostępny"): ["student"],
         }
         if (current_status, new_status) not in valid_transitions:
             return Response({"message": f"Nie można zmienić statusu z '{current_status}' na '{new_status}'"},
                             status=status.HTTP_403_FORBIDDEN)
 
-        required_role = valid_transitions[(current_status, new_status)]
+        required_roles = valid_transitions[(current_status, new_status)]
 
-        if required_role == "student" and not user.is_student:
-            return Response({"message": "Tylko student może wykonać tę zmianę"}, status=status.HTTP_403_FORBIDDEN)
-
-        if required_role == "supervisor" and not user.is_supervisor:
-            return Response({"message": "Tylko promotor może wykonać tę zmianę"}, status=status.HTTP_403_FORBIDDEN)
-
-        if required_role == "supervisor" and thesis.owner != user:
-            return Response({"message": "Nie jesteś promotorem tej pracy"}, status=status.HTTP_403_FORBIDDEN)
+        if "student" in required_roles and user.is_student:
+            pass  # OK
+        elif "supervisor" in required_roles and user.is_supervisor:
+            if thesis.owner != user:
+                return Response({"message": "Nie jesteś promotorem tej pracy"}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({"message": "Nie masz uprawnień do wykonania tej zmiany"}, status=status.HTTP_403_FORBIDDEN)
 
         if user.is_student:
             if (current_status, new_status) == ("Dostępny", "Zarezerwowany"):
