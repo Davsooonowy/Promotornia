@@ -31,7 +31,7 @@ export default function EditThesisStatusDialog(props: {
   } else if (props.newStatus === "Student zaakceptowany") {
     title = "Zaakceptuj studenta"
   } else if (props.newStatus === "Zarezerwowany") {
-    title = "Zarezewuj temat"
+    title = "Zarezerwuj temat"
   } else if (props.newStatus === "Zatwierdzony") {
     title = "Zatwierdź ostatecznie"
   }
@@ -40,7 +40,12 @@ export default function EditThesisStatusDialog(props: {
     <Dialog open={dialogOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="ghost"
+          variant={
+            props.newStatus === "Zarezerwowany" ||
+            props.newStatus === "Student zaakceptowany"
+              ? "default"
+              : "ghost"
+          }
           className="cursor-pointer"
           onClick={() => setDialogOpen(true)}
         >
