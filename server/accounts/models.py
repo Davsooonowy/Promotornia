@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth import get_user_model
+import uuid
 
 class UserManager(BaseUserManager):
     def create_user(self, email, first_name, last_name, password=None, **extra_fields):
@@ -52,3 +54,13 @@ class SystemUser(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     objects = UserManager()
+
+User = get_user_model()
+class OneTimePasswordLink(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    def is_expired(self):
+        return timezone.now() > self.expires_at
