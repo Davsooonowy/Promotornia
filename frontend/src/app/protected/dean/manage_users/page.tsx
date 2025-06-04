@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import Papa from "papaparse"
 import { Input } from "@/components/ui/input"
 import { mergeUniqueUsers } from "@/util/mergeUniqueUsers"
-import { ArrowUpToLine, Ban, FileDown } from "lucide-react"
+import { ArrowDownToLine, ArrowUpToLine, Ban, FileDown } from "lucide-react"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -209,6 +209,10 @@ export default function ManageUsers() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
+  }
+
   const scrollToNextError = () => {
     const index = newUsers.findIndex((user) => user.emailError)
     if (index !== -1 && cardRefs.current[index]) {
@@ -283,10 +287,14 @@ export default function ManageUsers() {
           </Button>
         </div>
       </div>
-      <div className="fixed right-12 bottom-24 gap-4">
+      <div className="fixed right-12 bottom-24 flex gap-4">
         <Button variant="default" onClick={scrollToTop}>
           <ArrowUpToLine />
           Skocz na górę
+        </Button>
+        <Button variant="default" onClick={scrollToBottom}>
+          <ArrowDownToLine />
+          Skocz na dół
         </Button>
         <Button variant="destructive" onClick={scrollToNextError}>
           <Ban />
