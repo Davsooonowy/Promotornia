@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import Papa from "papaparse"
 import { Input } from "@/components/ui/input"
 import { mergeUniqueUsers } from "@/util/mergeUniqueUsers"
+import { ArrowUpToLine, Ban, FileDown } from "lucide-react"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -37,6 +38,7 @@ export default function ManageUsers() {
   >([])
 
   const fileInput = useRef<HTMLInputElement | null>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const actionMutation = useMutation({
     mutationFn: async () => {
@@ -203,57 +205,94 @@ export default function ManageUsers() {
     }
   }
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const scrollToNextError = () => {
+    const index = newUsers.findIndex((user) => user.emailError)
+    if (index !== -1 && cardRefs.current[index]) {
+      cardRefs.current[index]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
+    } else {
+      toast.info("Brak kolejnych błędów do pokazania.")
+    }
+  }
+
   return (
-    <div className="w-full space-y-4">
-      <Label className="items-start text-4xl">
-        Zarządzanie {userType === "supervisor" ? "promotorami" : "studentami"}
-      </Label>
-      <div className="mt-4 flex flex-col space-y-4">
-        <Label>
-          Zaimportuj {userType === "supervisor" ? "promotorów" : "studentów"} z
-          pliku CSV. Wymagania: kolumna &apos;email&apos; musi być zawarta w
-          pliku
+    <>
+      <div className="w-full space-y-4">
+        <Label className="items-start text-4xl">
+          Zarządzanie {userType === "supervisor" ? "promotorami" : "studentami"}
         </Label>
-        <div className="flex">
-          <Input type="file" accept=".csv" className="w-96" ref={fileInput} />
-          <Button onClick={handleFileImport}>Zaimportuj</Button>
-        </div>
-        <ActionDialog
-          actionToLabel={actionToLabel}
-          userType={userType}
-          setAction={setAction}
-          action={action}
-          expirationDate={expirationDate}
-          setExpirationDate={setExpirationDate}
-          setChosenFieldsOfStudy={setChosenFieldsOfStudy}
-          chosenFieldsOfStudy={chosenFieldsOfStudy}
-          setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
-          chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
-          actionMutation={actionMutation}
-          mergeUniqueUsers={mergeUniqueUsers}
-          newUsers={newUsers}
-          setNewUsers={setNewUsers}
-          nextUserKey={nextUserKey}
-          setNextUserKey={setNextUserKey}
-        />
-      </div>
-      <div className="mx-auto max-w-3xl space-y-4">
-        {newUsers.map((newUser) => (
-          <NewUserCard
-            key={newUser.key}
-            newUser={newUser}
-            handleRemoveUser={handleRemoveUser}
-            handleUpdateEmail={handleUpdateEmail}
-            error={newUser.emailError}
+        <div className="mt-4 flex flex-col space-y-4">
+          <Label>
+            <FileDown />
+            Zaimportuj {userType === "supervisor"
+              ? "promotorów"
+              : "studentów"}{" "}
+            z pliku CSV. Wymagania: kolumna &apos;email&apos; musi być zawarta w
+            pliku
+          </Label>
+          <div className="flex">
+            <Input type="file" accept=".csv" className="w-96" ref={fileInput} />
+            <Button onClick={handleFileImport}>Zaimportuj</Button>
+          </div>
+          <ActionDialog
+            actionToLabel={actionToLabel}
+            userType={userType}
+            setAction={setAction}
+            action={action}
+            expirationDate={expirationDate}
+            setExpirationDate={setExpirationDate}
+            setChosenFieldsOfStudy={setChosenFieldsOfStudy}
+            chosenFieldsOfStudy={chosenFieldsOfStudy}
+            setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
+            chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
+            actionMutation={actionMutation}
+            mergeUniqueUsers={mergeUniqueUsers}
+            newUsers={newUsers}
+            setNewUsers={setNewUsers}
+            nextUserKey={nextUserKey}
+            setNextUserKey={setNextUserKey}
           />
-        ))}
+        </div>
+        <div className="mx-auto max-w-3xl space-y-4">
+          {newUsers.map((newUser, index) => (
+            <div
+              ref={(el) => {
+                cardRefs.current[index] = el
+              }}
+              key={newUser.key}
+            >
+              <NewUserCard
+                newUser={newUser}
+                handleRemoveUser={handleRemoveUser}
+                handleUpdateEmail={handleUpdateEmail}
+                error={newUser.emailError}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex w-full justify-center">
+          <Button onClick={handleAddNewUser} className="mb-4 cursor-pointer">
+            <FaPlus />
+            <p>Więcej użytkowników</p>
+          </Button>
+        </div>
       </div>
-      <div className="flex w-full justify-center">
-        <Button onClick={handleAddNewUser} className="mb-4 cursor-pointer">
-          <FaPlus />
-          <p>Więcej użytkowników</p>
+      <div className="fixed right-12 bottom-24 gap-4">
+        <Button variant="default" onClick={scrollToTop}>
+          <ArrowUpToLine />
+          Skocz na górę
+        </Button>
+        <Button variant="destructive" onClick={scrollToNextError}>
+          <Ban />
+          Skocz do błędu
         </Button>
       </div>
-    </div>
+    </>
   )
 }
