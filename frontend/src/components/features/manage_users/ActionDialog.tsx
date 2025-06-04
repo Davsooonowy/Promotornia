@@ -15,11 +15,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Calendar } from "@/components/ui/calendar"
-import { FieldOfStudy } from "@/util/types"
+import { FieldOfStudy, NewUser } from "@/util/types"
 import { useMutation, UseMutationResult } from "@tanstack/react-query"
 import { useState, useEffect, SetStateAction, Dispatch } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 
 export default function ActionDialog(props: {
   actionToLabel: Map<string, string>
@@ -33,6 +34,14 @@ export default function ActionDialog(props: {
   setChosenFieldsOfStudyCount: Dispatch<SetStateAction<number>>
   chosenFieldsOfStudyCount: number
   actionMutation: UseMutationResult<void, Error, void, unknown>
+  mergeUniqueUsers: (
+    existing: NewUser[],
+    imported: NewUser[],
+  ) => { users: NewUser[]; duplicates: number }
+  newUsers: NewUser[]
+  setNewUsers: Dispatch<SetStateAction<NewUser[]>>
+  nextUserKey: number
+  setNextUserKey: Dispatch<SetStateAction<number>>
 }) {
   const [fieldsOfStudy, setFieldsOfStudy] = useState<FieldOfStudy[] | null>(
     null,
@@ -80,8 +89,28 @@ export default function ActionDialog(props: {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="cursor-pointer self-start">Przejdź dalej</Button>
+        <Button
+          className="cursor-pointer self-start"
+          onClick={() => {
+            const { users, duplicates } = props.mergeUniqueUsers(
+              props.newUsers,
+              [],
+            )
+
+            props.setNewUsers(users)
+
+            const maxKey = users.reduce((max, u) => Math.max(max, u.key), 0)
+            props.setNextUserKey(maxKey + 1)
+
+            if (duplicates > 0) {
+              toast.warning(`Pominięto ${duplicates} duplikatów adresów email.`)
+            }
+          }}
+        >
+          Przejdź dalej
+        </Button>
       </DialogTrigger>
+
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>

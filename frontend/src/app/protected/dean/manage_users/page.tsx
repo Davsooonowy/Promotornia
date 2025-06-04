@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useSearchParams } from "next/navigation"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import { FaPlus } from "react-icons/fa"
 import { useMutation } from "@tanstack/react-query"
 import { NewUser, FieldOfStudy, NewUserScheme } from "@/util/types"
@@ -10,6 +10,9 @@ import NewUserCard from "@/components/features/manage_users/NewUserCard"
 import ActionDialog from "@/components/features/manage_users/ActionDialog"
 import apiUrl from "@/util/apiUrl"
 import { toast } from "sonner"
+import Papa from "papaparse"
+import { Input } from "@/components/ui/input"
+import { mergeUniqueUsers } from "@/util/mergeUniqueUsers"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -32,6 +35,8 @@ export default function ManageUsers() {
   const [chosenFieldsOfStudy, setChosenFieldsOfStudy] = useState<
     FieldOfStudy[]
   >([])
+
+  const fileInput = useRef<HTMLInputElement | null>(null)
 
   const actionMutation = useMutation({
     mutationFn: async () => {
@@ -167,16 +172,52 @@ export default function ManageUsers() {
     setNewUsers((state) => state.filter((user) => user.key !== key))
   }
 
+  const handleFileImport = () => {
+    if (!fileInput.current) return
+    const file = fileInput.current.files?.[0]
+
+    if (file) {
+      Papa.parse<{ email: string }>(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const importedUsers = results.data.map((row, index) => ({
+            email: row.email.trim(),
+            emailError: null,
+            key: nextUserKey + index,
+          }))
+
+          const { users, duplicates } = mergeUniqueUsers(
+            newUsers,
+            importedUsers,
+          )
+
+          setNewUsers(users)
+          setNextUserKey(nextUserKey + importedUsers.length)
+
+          if (duplicates > 0) {
+            toast.warning(`Pominięto ${duplicates} duplikatów adresów email.`)
+          }
+        },
+      })
+    }
+  }
+
   return (
     <div className="w-full space-y-4">
       <Label className="items-start text-4xl">
         Zarządzanie {userType === "supervisor" ? "promotorami" : "studentami"}
       </Label>
       <div className="mt-4 flex flex-col space-y-4">
-        <Button className="cursor-pointer self-start">
+        <Label>
           Zaimportuj {userType === "supervisor" ? "promotorów" : "studentów"} z
+          pliku CSV. Wymagania: kolumna &apos;email&apos; musi być zawarta w
           pliku
-        </Button>
+        </Label>
+        <div className="flex">
+          <Input type="file" accept=".csv" className="w-96" ref={fileInput} />
+          <Button onClick={handleFileImport}>Zaimportuj</Button>
+        </div>
         <ActionDialog
           actionToLabel={actionToLabel}
           userType={userType}
@@ -189,6 +230,11 @@ export default function ManageUsers() {
           setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
           chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
           actionMutation={actionMutation}
+          mergeUniqueUsers={mergeUniqueUsers}
+          newUsers={newUsers}
+          setNewUsers={setNewUsers}
+          nextUserKey={nextUserKey}
+          setNextUserKey={setNextUserKey}
         />
       </div>
       <div className="mx-auto max-w-3xl space-y-4">
