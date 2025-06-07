@@ -655,3 +655,8 @@ Usuwa pracę z bazy, powinno działać tylko, jeśli praca ma status "Ukryty"
   "id": 1
 }
 ```
+
+# Endpoint GET /thesis/producer/producer_id/
+
+**Opis:**
+Zwraca prace dyplomowe przypisane do danego studenta.
