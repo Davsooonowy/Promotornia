@@ -18,6 +18,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { ThesisBackend } from "@/util/types"
 
 export default function OwnTheses() {
   const { supervisorId } = useParams<{ supervisorId: string }>()
@@ -79,7 +80,7 @@ export default function OwnTheses() {
 
         const data = await thesesResponse.json()
 
-        const mappedTheses = data.theses.map((thesis) => ({
+        const mappedTheses = data.theses.map((thesis: ThesisBackend) => ({
           id: thesis.id,
           title: thesis.name,
           description: thesis.description,

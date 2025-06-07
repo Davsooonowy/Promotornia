@@ -24,7 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { FieldOfStudy, Supervisor } from "@/util/types"
+import { Supervisor, SupervisorBackend } from "@/util/types"
 import apiUrl from "@/util/apiUrl"
 
 export interface SupervisorsListProps {
@@ -39,7 +39,7 @@ export default function SupervisorsList({
   currentUserId,
 }: SupervisorsListProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [fieldOfStudy, setFieldOfStudy] = useState<FieldOfStudy | null>(null)
+  const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
   const [showOnlyWithSlots, setShowOnlyWithSlots] = useState(false)
   const [loading, setLoading] = useState(true)
   const [supervisors, setSupervisors] = useState<Supervisor[]>([])
@@ -67,15 +67,17 @@ export default function SupervisorsList({
         if (!response.ok) throw new Error("Nie udało się pobrać promotorów")
         const data = await response.json()
 
-        const mappedSupervisors = data.supervisors.map((supervisor) => ({
-          id: supervisor.id,
-          name: `${supervisor.title} ${supervisor.first_name} ${supervisor.last_name}`,
-          email: supervisor.email,
-          department: supervisor.field_of_study[0].name,
-          specialization: supervisor.description || "N/A",
-          availableSlots: supervisor.free_spots,
-          totalSlots: supervisor.total_spots,
-        }))
+        const mappedSupervisors = data.supervisors.map(
+          (supervisor: SupervisorBackend) => ({
+            id: supervisor.id,
+            name: `${supervisor.title} ${supervisor.first_name} ${supervisor.last_name}`,
+            email: supervisor.email,
+            department: supervisor.field_of_study.name,
+            specialization: supervisor.description || "N/A",
+            availableSlots: supervisor.free_spots,
+            totalSlots: supervisor.total_spots,
+          }),
+        )
 
         setSupervisors(mappedSupervisors)
         setTotalPages(data.totalPages)

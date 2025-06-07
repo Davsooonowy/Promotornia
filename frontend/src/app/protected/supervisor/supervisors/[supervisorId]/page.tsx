@@ -77,7 +77,7 @@ export default function Supervisor() {
 
   useEffect(() => {
     supervisorFetch.mutate()
-  }, [])
+  }, [supervisorFetch])
 
   useEffect(() => {
     if (fetchError) {
