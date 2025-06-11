@@ -175,7 +175,10 @@ export default function OwnTheses() {
                         </Link>
                       </div>
                       <p className="text-sm">
-                        Katedra: {thesis.fieldOfStudy.name}
+                        Katedra:{" "}
+                        {thesis.fieldOfStudy
+                          ? thesis.fieldOfStudy.name
+                          : "Nie wybrano"}
                       </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {thesis.createdAt}

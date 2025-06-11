@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
@@ -28,7 +28,10 @@ import { useTheme } from "next-themes"
 import { Moon, Sun } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
 import apiUrl from "@/util/apiUrl"
-import { toast } from "sonner"
+import {
+  ThesisStatusChangedContext,
+  ThesisStatusChangedContextType,
+} from "../context/ThesisStatusChangedContext"
 
 interface NavbarProps {
   navItems: NavigationItem[]
@@ -202,11 +205,18 @@ export function StudentTopMenu() {
   const [shouldFetch, setShouldFetch] = useState(true)
   const [loading, setLoading] = useState(true)
 
+  const thesisStatusChanged = useContext<
+    ThesisStatusChangedContextType | undefined
+  >(ThesisStatusChangedContext)
+
   const ownThesisFetch = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (userId: number | undefined) => {
+      if (!userId) {
+        return
+      }
       setLoading(true)
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/student/own_thesis`, {
+      const response = await fetch(`${apiUrl}/thesis/producer/${userId}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -214,31 +224,35 @@ export function StudentTopMenu() {
         },
       })
       if (!response.ok) {
-        throw new Error("Nie udało się pobrać Twojej pracy")
+        throw new Error()
       }
 
       const data = await response.json()
 
       return data.id
     },
-    onError: (e) => {
-      toast.error(e.message, {
-        description: "Zakładka 'Mój temat' nie będzie działać",
-      })
+    onError: () => {
       setLoading(false)
+      setOwnThesisId(null)
     },
     onSuccess: (thesisId) => {
-      setOwnThesisId(thesisId)
-      setLoading(false)
+      if (thesisId) {
+        setOwnThesisId(thesisId)
+        setLoading(false)
+      }
     },
   })
 
   useEffect(() => {
-    if (shouldFetch) {
+    if (shouldFetch && tokenPayload) {
       setShouldFetch(false)
-      ownThesisFetch.mutate()
+      ownThesisFetch.mutate(tokenPayload?.user_id)
     }
-  }, [ownThesisFetch, shouldFetch])
+    if (thesisStatusChanged?.thesisStatusChanged) {
+      thesisStatusChanged.setThesisStatusChanged(false)
+      setShouldFetch(true)
+    }
+  }, [ownThesisFetch, shouldFetch, tokenPayload, thesisStatusChanged])
 
   if (!tokenPayload) return null
 
@@ -250,7 +264,7 @@ export function StudentTopMenu() {
         <Navbar
           navItems={[
             {
-              href: `/protected/student/theses/${ownThesisId}`,
+              href: `/protected/student/theses/${String(ownThesisId)}`,
               text: "Mój Temat",
             },
             {

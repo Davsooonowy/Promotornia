@@ -14,7 +14,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center space-x-3">
             <Link
-              href="https://www.youtube.com/watch?v=cF1Na4AIecM"
+              href="https://skos.agh.edu.pl/jednostka/akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie/wydzial-zarzadzania-316.html"
               className="text-muted-foreground hover:text-foreground text-sm"
             >
               Kontakt

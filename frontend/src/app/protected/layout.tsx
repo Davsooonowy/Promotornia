@@ -11,6 +11,7 @@ import { useEffect, useState } from "react"
 import { Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
+import { MyProviders } from "@/components/context/MyProviders"
 
 export default function RootLayout({
   children,
@@ -63,13 +64,15 @@ export default function RootLayout({
   }
 
   return (
-    <ErrorBoundary>
-      <div className="flex min-h-screen flex-col">
-        {getTopMenu()}
-        <div className="main-content">
-          <div className="page-container">{children}</div>
+    <MyProviders>
+      <ErrorBoundary>
+        <div className="flex min-h-screen flex-col">
+          {getTopMenu()}
+          <div className="main-content">
+            <div className="page-container">{children}</div>
+          </div>
         </div>
-      </div>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </MyProviders>
   )
 }

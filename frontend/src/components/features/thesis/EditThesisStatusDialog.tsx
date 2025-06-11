@@ -16,7 +16,7 @@ export default function EditThesisStatusDialog(props: {
   thesis: ThesisDetails | null
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   changeThesisStatusMutation: UseMutationResult<
-    void,
+    void | ThesisStatus,
     Error,
     ThesisStatus,
     unknown

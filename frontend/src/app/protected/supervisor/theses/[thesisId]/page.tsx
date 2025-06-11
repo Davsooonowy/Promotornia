@@ -1,7 +1,7 @@
 "use client"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +31,10 @@ import EditThesisStatusDialog from "@/components/features/thesis/EditThesisStatu
 import EditFieldOfStudyDialog from "@/components/features/thesis/EditFieldOfStudyDialog"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  ThesisStatusChangedContext,
+  ThesisStatusChangedContextType,
+} from "@/components/context/ThesisStatusChangedContext"
 
 export default function Thesis() {
   const { thesisId } = useParams<{ thesisId: string }>()
@@ -64,6 +68,10 @@ export default function Thesis() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const { tokenPayload } = useDecodeToken()
+
+  const thesisStatusChanged = useContext<
+    ThesisStatusChangedContextType | undefined
+  >(ThesisStatusChangedContext)
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
@@ -173,6 +181,9 @@ export default function Thesis() {
 
   const changeThesisStatusMutation = useMutation({
     mutationFn: async (newStatus: ThesisStatus) => {
+      if (newStatus === "Dostępny" && !thesis?.fieldOfStudy) {
+        throw new Error("Wybierz kierunek studiów.")
+      }
       const token = localStorage.getItem("token")
       const response = await fetch(
         `${apiUrl}/theses/${numericThesisId}/status/edit/`,
@@ -198,6 +209,7 @@ export default function Thesis() {
       setMutationSuccessMessage("Zmieniono status pracy.")
       thesisFetch.mutate()
       setHasUnsavedChanges(false)
+      thesisStatusChanged?.setThesisStatusChanged(true)
     },
   })
 
