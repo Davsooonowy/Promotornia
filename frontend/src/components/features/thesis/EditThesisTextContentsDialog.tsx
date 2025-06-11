@@ -20,6 +20,7 @@ export default function EditThesisTextContentDialog<
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   field: T
   label: string // np. "Edytuj temat", "Edytuj opis"
+  setHasUnsavedChanges: Dispatch<SetStateAction<boolean>>
 }) {
   const [valueBeforeEdition, setValueBeforeEdition] = useState<
     ThesisDetails[T] | null
@@ -39,6 +40,7 @@ export default function EditThesisTextContentDialog<
 
   const handleSave = () => {
     setDialogOpen(false)
+    props.setHasUnsavedChanges(true)
   }
 
   return (

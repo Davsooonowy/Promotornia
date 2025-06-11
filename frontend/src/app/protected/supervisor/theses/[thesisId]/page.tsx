@@ -61,6 +61,8 @@ export default function Thesis() {
     string | null
   >(null)
 
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
   const { tokenPayload } = useDecodeToken()
 
   const thesisFetch = useMutation({
@@ -195,6 +197,7 @@ export default function Thesis() {
     onSuccess: () => {
       setMutationSuccessMessage("Zmieniono status pracy.")
       thesisFetch.mutate()
+      setHasUnsavedChanges(false)
     },
   })
 
@@ -229,6 +232,7 @@ export default function Thesis() {
     },
     onSuccess: () => {
       setMutationSuccessMessage("Zapisano zmiany")
+      setHasUnsavedChanges(false)
     },
   })
 
@@ -387,6 +391,11 @@ export default function Thesis() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {hasUnsavedChanges && (
+                  <Label className="font-semibold">
+                    Masz niezapisane zamiany!
+                  </Label>
+                )}
                 <Checkbox
                   checked={editionMode}
                   onCheckedChange={toggleEditionMode}
@@ -440,6 +449,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="title"
                     label="Edytuj tytuł"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </div>
@@ -473,6 +483,7 @@ export default function Thesis() {
                       thesis={thesis}
                       setThesis={setThesis}
                       fieldsOfStudy={fieldsOfStudy}
+                      setHasUnsavedChanges={setHasUnsavedChanges}
                     />
                   ))}
               </div>
@@ -502,6 +513,8 @@ export default function Thesis() {
                     thesis={thesis}
                     setThesis={setThesis}
                     allTags={allTags}
+                    allTagsFetch={allTagsFetch}
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </div>
@@ -518,6 +531,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="description"
                     label="Edytuj opis"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </CardTitle>
@@ -539,6 +553,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="prerequisitesDescription"
                     label="Edytuj wymagania"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </CardTitle>
@@ -563,6 +578,15 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Student zaakceptowany"
+                />
+              )}
+              {thesis.status === "Zarezerwowany" && editionMode && (
+                <EditThesisStatusDialog
+                  thesis={thesis}
+                  setThesis={setThesis}
+                  changeThesisStatusMutation={changeThesisStatusMutation}
+                  newStatus="Dostępny"
+                  oldStatus="Zarezerwowany"
                 />
               )}
 
