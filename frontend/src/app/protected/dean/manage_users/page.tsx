@@ -240,6 +240,11 @@ export default function ManageUsers() {
             z pliku CSV. Wymagania: kolumna &apos;email&apos; musi być zawarta w
             pliku
           </Label>
+          <Label>
+            Uwaga! Zanim zaczniesz dodawać użytkowników, upewnij się, że są
+            dostępne odpowiednie kierunki studiów. Możesz je znaleźć w zakładce
+            &quot;Pozostałe akcje&quot;
+          </Label>
           <div className="flex">
             <Input type="file" accept=".csv" className="w-96" ref={fileInput} />
             <Button onClick={handleFileImport}>Zaimportuj</Button>

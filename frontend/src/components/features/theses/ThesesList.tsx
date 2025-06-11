@@ -393,7 +393,10 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                         </Link>
                       </div>
                       <p className="text-foreground text-sm">
-                        Katedra: {topic.fieldOfStudy.name}
+                        Katedra:{" "}
+                        {topic.fieldOfStudy
+                          ? topic.fieldOfStudy.name
+                          : "Nie wybrano"}
                       </p>
                       <p className="text-muted-foreground text-sm">
                         Dodano: {topic.createdAt}
