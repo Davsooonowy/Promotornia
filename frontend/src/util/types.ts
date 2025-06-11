@@ -77,6 +77,22 @@ interface ThesisDetails {
   createdAt: string
 }
 
+interface ThesisBackend {
+  id: number
+  name: string
+  description: string
+  prerequisites: string
+  field_of_study: FieldOfStudy
+  tags: Tag[]
+  owner: {
+    first_name: string
+    last_name: string
+    id: number
+  }
+  status: ThesisStatus
+  date_of_creation: string
+}
+
 interface Supervisor {
   id: number
   name: string
@@ -87,6 +103,18 @@ interface Supervisor {
   totalSlots: number
 }
 
+interface SupervisorBackend {
+  id: number
+  title: string
+  first_name: string
+  last_name: string
+  email: string
+  field_of_study: FieldOfStudy
+  description: string
+  free_spots: number
+  total_spots: number
+}
+
 export type {
   NavigationItem,
   LoginFormData,
@@ -94,8 +122,10 @@ export type {
   NewUser,
   FieldOfStudy,
   Supervisor,
+  SupervisorBackend,
   ThesisStatus,
   ThesisDetails,
+  ThesisBackend,
   UserRole,
 }
 export { LoginFormDataSchema, NewUserScheme, PasswordFormDataSchema }

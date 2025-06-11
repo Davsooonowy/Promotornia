@@ -34,11 +34,12 @@ export default function Thesis() {
   >(null)
 
   const { tokenPayload } = useDecodeToken()
+  const userId = tokenPayload?.user_id
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
+      const response = await fetch(`${apiUrl}/thesis/producer/${userId}/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

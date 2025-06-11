@@ -656,6 +656,7 @@ Usuwa pracę z bazy, powinno działać tylko, jeśli praca ma status "Ukryty"
 }
 ```
 
+
 # Endpoint POST /supervisor/tags/
 
 **Opis:**
@@ -668,3 +669,9 @@ Dodaje nowy tag
   "name": "Algorytmy"
 }
 ```
+
+# Endpoint GET /thesis/producer/producer_id/
+
+**Opis:**
+Zwraca prace dyplomowe przypisane do danego studenta.
+

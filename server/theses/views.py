@@ -331,3 +331,16 @@ class SupervisorDetailView(APIView):
 
         data = account_serializers.SupervisorSerializer(supervisor).data
         return Response(data, status=status.HTTP_200_OK)
+
+class ThesisByProducerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, producer_id):
+        thesis = models.Thesis.objects.filter(producer_id=producer_id).first()
+        if not thesis:
+            return Response(
+                {"error": "Thesis not found for the given producer ID"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        data = serializers.ThesisSerializer(thesis).data
+        return Response(data, status=status.HTTP_200_OK)

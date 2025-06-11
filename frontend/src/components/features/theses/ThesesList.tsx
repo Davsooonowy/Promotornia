@@ -35,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
 import { Tag, ThesisDetails } from "@/util/types"
 import { UserRole } from "@/util/enums"
+import { ThesisBackend } from "@/util/types"
 
 export interface ThesesListProps {
   basePath: string
@@ -78,7 +79,7 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
           throw new Error("Wyszukiwanie tematów nie powiodło się")
         const data = await response.json()
 
-        const mappedTheses = data.theses.map((thesis) => ({
+        const mappedTheses = data.theses.map((thesis: ThesisBackend) => ({
           id: thesis.id,
           title: thesis.name,
           description: thesis.description,
@@ -144,7 +145,7 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
 
   const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
 
-  const totalPages = Math.ceil(theses?.length | (0 / itemsPerPage))
+  const totalPages = Math.ceil((theses?.length || 0) / itemsPerPage)
 
   const handleSort = (field: string) => {
     if (sortField === field) {
