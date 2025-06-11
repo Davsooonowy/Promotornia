@@ -47,7 +47,6 @@ class ThesisView(APIView):
         ):
             return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
 
-
         serializer = serializers.UpdateThesisSerializer(
             instance=thesis,
             data=data,
@@ -62,7 +61,10 @@ class ThesisView(APIView):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
             thesis = thesis[0]
-            if thesis.owner != request.user:
+            if (
+                thesis.owner != request.user or
+                thesis.status.lower() != "ukryty"
+            ):
                 return Response(status=status.HTTP_403_FORBIDDEN)
             thesis.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -86,6 +88,15 @@ class ThesisStatus(APIView):
             return Response({"message": "Brak statusu w żądaniu"}, status=status.HTTP_400_BAD_REQUEST)
 
         current_status = thesis.status
+
+        if (
+            "ukryty" == current_status.lower() != new_status.lower() and
+            thesis.field_of_study is data.get("field_of_study") is None
+        ):
+            return Response(
+                {"message": "Nie można opublikować pracy dyplomowej bez ustawienia kierunku studiów!"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         valid_transitions = {
             ("Ukryty", "Dostępny"): ["supervisor"],
@@ -165,6 +176,8 @@ class ThesisListView(APIView):
         objects = models.Thesis.objects.all().annotate(
             full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
+        if request.user.is_student:
+            objects = objects.filter(field_of_study__in=request.user.field_of_study.values_list())
 
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
@@ -239,6 +252,8 @@ class SupervisorListView(APIView):
             ),
         )
 
+        if request.user.is_student:
+            objects = objects.filter(field_of_study__in=request.user.field_of_study.values_list())
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
         if tags is not None:
