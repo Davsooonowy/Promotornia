@@ -59,8 +59,11 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
   const [visibleTagsCount, setVisibleTagsCount] = useState(20)
   const [theses, setTheses] = useState<ThesisDetails[] | null>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
+  const [totalPages, setTotalPages] = useState(0)
 
   const [shouldFetch, setShouldFetch] = useState(true)
+
+  const itemsPerPage = Number(process.env.ITEMS_PER_PAGE || "4")
 
   const thesesMutation = useMutation({
     mutationFn: async () => {
@@ -79,7 +82,7 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
       if (!response.ok) throw new Error("Wyszukiwanie tematów nie powiodło się")
       const data = await response.json()
 
-      const mappedTheses = data.theses.map((thesis: ThesisBackend) => ({
+      const mappedTheses = data.results.map((thesis: ThesisBackend) => ({
         id: thesis.id,
         title: thesis.name,
         description: thesis.description,
@@ -91,13 +94,14 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
         status: thesis.status,
         createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
       }))
-      return mappedTheses
+      return { mappedTheses, count: data.count }
     },
-    onSuccess: (mappedTheses) => {
-      setTheses(mappedTheses)
+    onSuccess: (data) => {
+      setTheses(data.mappedTheses)
+      setTotalPages(Math.ceil(data.count / itemsPerPage))
       setLoading(false)
     },
-    onError: (e) => {
+    onError: () => {
       setLoading(false)
     },
   })
@@ -140,10 +144,6 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
       tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase()),
     )
   }, [allTags, tagSearchQuery])
-
-  const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
-
-  const totalPages = Math.ceil((theses?.length || 0) / itemsPerPage)
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -479,7 +479,10 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1))
+                  thesesMutation.mutate()
+                }}
                 className={
                   currentPage === 1
                     ? "pointer-events-none opacity-50"
@@ -500,7 +503,10 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                   <PaginationItem key={page}>
                     <PaginationLink
                       isActive={page === currentPage}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => {
+                        setCurrentPage(page)
+                        thesesMutation.mutate()
+                      }}
                       className="cursor-pointer"
                     >
                       {page}
@@ -518,9 +524,10 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
 
             <PaginationItem>
               <PaginationNext
-                onClick={() =>
+                onClick={() => {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
+                  thesesMutation.mutate()
+                }}
                 className={
                   currentPage === totalPages
                     ? "pointer-events-none opacity-50"
