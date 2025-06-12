@@ -187,7 +187,7 @@ class ThesisListView(ListAPIView):
             objects = objects.filter(field_of_study__id=field_of_study)
 
         if tags is not None:
-            objects = objects.filter(tags__in=tags)
+            objects = objects.filter(tags__in=tags).distinct()
 
         if search is not None:
             objects = (objects.filter(
@@ -249,7 +249,7 @@ class SupervisorListView(ListAPIView):
         )
 
         if self.request.user.is_student:
-            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list())
+            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list()).distinct()
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
         if search is not None:
