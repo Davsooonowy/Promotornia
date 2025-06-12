@@ -7,12 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import type {
-  FieldOfStudy,
-  Tag,
-  ThesisDetails,
-  ThesisStatus,
-} from "@/util/types"
+import { FieldOfStudy, Tag, ThesisDetails, ThesisStatus } from "@/util/types"
+import { UserRole } from "@/util/enums"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   User,
@@ -426,6 +422,7 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Hide or publish"
+                  userRole={UserRole.supervisor}
                 />
               </div>
             </div>
@@ -590,6 +587,7 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Student zaakceptowany"
+                  userRole={UserRole.supervisor}
                 />
               )}
               {thesis.status === "Zarezerwowany" && editionMode && (
@@ -599,6 +597,7 @@ export default function Thesis() {
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Dostępny"
                   oldStatus="Zarezerwowany"
+                  userRole={UserRole.supervisor}
                 />
               )}
 

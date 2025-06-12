@@ -1,7 +1,7 @@
 import { UseMutationResult } from "@tanstack/react-query"
 import { useState } from "react"
 import { Label } from "@/components/ui/label"
-import { ThesisDetails, ThesisStatus } from "@/util/types"
+import { ThesisDetails, ThesisStatus, UserRole } from "@/util/types"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,6 +23,7 @@ export default function EditThesisStatusDialog(props: {
   >
   newStatus: ThesisStatus | "Hide or publish"
   oldStatus?: ThesisStatus
+  userRole?: UserRole
 }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   let title
@@ -62,65 +63,74 @@ export default function EditThesisStatusDialog(props: {
         <Label>
           Czy jesteś pewien? Ta akcja będzie miała następujące konsekwencje:
         </Label>
-        {props.newStatus === "Hide or publish" &&
-          (props.thesis?.status !== "Ukryty" ? (
-            <ul>
-              <li>Praca nie będzie już widoczna przez innych</li>
+        <ul>
+          {props.userRole === "supervisor" && (
+            <li className="text-red-500">
+              Niezapisane zmiany zostaną anulowane
+            </li>
+          )}
+
+          {props.newStatus === "Hide or publish" &&
+            (props.thesis?.status !== "Ukryty" ? (
+              <>
+                <li>Praca nie będzie już widoczna przez innych</li>
+                {props.thesis?.reservedBy && (
+                  <li className="text-red-500">
+                    Obecna rezerwacja tematu przez studenta zostanie anulowana
+                  </li>
+                )}
+              </>
+            ) : (
+              <>
+                <li>Od teraz praca będzie widoczna przez innych</li>
+                <li>
+                  Nie będzie można zmienić kierunku studiów, którego dotyczy
+                  praca
+                </li>
+              </>
+            ))}
+          {props.newStatus === "Student zaakceptowany" && (
+            <>
+              <li>Student otrzyma prośbę o zatwierdzenie realizacji tematu</li>
               {props.thesis?.reservedBy && (
                 <li className="text-red-500">
-                  Obecna rezerwacja tematu przez studenta zostanie anulowana
+                  Nie będzie można już edytować zawartości pracy
                 </li>
               )}
-            </ul>
-          ) : (
-            <ul>
-              <li>Od teraz praca będzie widoczna przez innych</li>
+            </>
+          )}
+          {props.newStatus === "Zarezerwowany" && (
+            <>
               <li>
-                Nie będzie można zmienić kierunku studiów, którego dotyczy praca
+                Promotor nadal będzie mógł zmieniać zawartość pracy aż status
+                zostanie ustawiony na &quot;Student zaakceptowany&quot;, ale
+                będziesz mógł jeszcze cofnąć rezerwację. Promotor zostanie
+                poproszony o zaaceptowanie Twojej rezerwacji, co ty jeszcze
+                będziesz musiał zatwierdzić (wtedy już ostatecznie) lub
+                zrezygnować.
               </li>
-            </ul>
-          ))}
-        {props.newStatus === "Student zaakceptowany" && (
-          <ul>
-            <li>Student otrzyma prośbę o zatwierdzenie realizacji tematu</li>
-            {props.thesis?.reservedBy && (
+            </>
+          )}
+          {props.newStatus === "Zatwierdzony" && (
+            <>
               <li className="text-red-500">
-                Nie będzie można już edytować zawartości pracy
+                Nie będzie można już cofnąć rezerwacji, zostaniesz ostatecznie
+                przypisany do tematu
               </li>
-            )}
-          </ul>
-        )}
-        {props.newStatus === "Zarezerwowany" && (
-          <ul>
-            <li>
-              Promotor nadal będzie mógł zmieniać zawartość pracy aż status
-              zostanie ustawiony na &quot;Student zaakceptowany&quot;, ale
-              będziesz mógł jeszcze cofnąć rezerwację. Promotor zostanie
-              poproszony o zaaceptowanie Twojej rezerwacji, co ty jeszcze
-              będziesz musiał zatwierdzić (wtedy już ostatecznie) lub
-              zrezygnować.
-            </li>
-          </ul>
-        )}
-        {props.newStatus === "Zatwierdzony" && (
-          <ul>
-            <li className="text-red-500">
-              Nie będzie można już cofnąć rezerwacji, zostaniesz ostatecznie
-              przypisany do tematu
-            </li>
-            <li>
-              Promotor nie będzie już mógł modyfikować zawartości pracy (już
-              teraz nie może, bo status to &quot;Student zaakceptowany&quot;)
-            </li>
-          </ul>
-        )}
-        {props.newStatus === "Dostępny" && (
-          <ul>
-            <li className="text-red-500">
-              Obecna rezerwacja studenta zostanie anulowana
-            </li>
-          </ul>
-        )}
+              <li>
+                Promotor nie będzie już mógł modyfikować zawartości pracy (już
+                teraz nie może, bo status to &quot;Student zaakceptowany&quot;)
+              </li>
+            </>
+          )}
+          {props.newStatus === "Dostępny" && (
+            <>
+              <li className="text-red-500">
+                Obecna rezerwacja studenta zostanie anulowana
+              </li>
+            </>
+          )}
+        </ul>
         <Button onClick={() => setDialogOpen(false)}>Anuluj</Button>
         <Button
           onClick={() => {
