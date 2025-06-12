@@ -467,16 +467,74 @@ Authorization: "Bearer TUTAJ_TOKEN",
 
 `FieldOfStudy = {id: number, name: string}`
 
-**Odpowiedzią jest {theses: List[Thesis]}, struktura Thesis opisana jest poniżej**
-| Nazwa | Typ | Wymagany | Opis |
-|--------|--------|----------|----------------------------|
-| id | number | | Identyfikator pracy |
-| name | string | | Nazwa pracy |
-| owner | User | | Opiekun pracy |
-| fieldOfStudy | FieldOfStudy | | Kierunek studiów (wraz z wydziałem) gdzie realizowana jest praca |
-| dateOfCreation | DateTime | | Data utworzenia |
-| tags | List[{id: number, name: string}] | | Lista tagów |
-| status | string | | Status pracy dyplomowej |
+Przykładowy JSON
+```json
+{
+  "count": 6,
+  "next": "http://next-page-url" | null,
+  "previous": "http://prev-page-url" | null,
+  "results": [
+    {
+      "id": 4,
+      "tags": [
+        {
+          "id": 2,
+          "name": "AI"
+        },
+        {
+          "id": 3,
+          "name": "Inżynieria Oprogramowania"
+        },
+        {
+          "id": 4,
+          "name": "Robotyka"
+        }
+      ],
+      "owner": {
+        "id": 1,
+        "email": "",
+        "first_name": "",
+        "last_name": "",
+        "title": null
+      },
+      "field_of_study": {
+        "id": 2,
+        "name": "Informatyka i Systemy Inteligentne"
+      },
+      "name": "Praca nr. 4. Podaj nazwę pracy",
+      "date_of_creation": "2025-06-11T14:30:19.875896Z",
+      "status": "Dostępny"
+    },
+    {
+      "id": 1,
+      "tags": [
+        {
+          "id": 1,
+          "name": "Algorytmy"
+        },
+        {
+          "id": 5,
+          "name": "Garncarstwo"
+        }
+      ],
+      "owner": {
+        "id": 1,
+        "email": "",
+        "first_name": "",
+        "last_name": "",
+        "title": null
+      },
+      "field_of_study": {
+        "id": 1,
+        "name": "Informatyka"
+      },
+      "name": "Praca nr. 1. Podaj nazwę pracy",
+      "date_of_creation": "2025-06-11T09:53:26.604386Z",
+      "status": "Dostępny"
+    }
+  ]
+}
+```
 
 # Endpoint GET /supervisors/list?page&fieldOfStudy&available&order&ascending&search
 
@@ -495,17 +553,69 @@ Dokładnie to samo co w endpoincie powyżej, jedynie `search` wyszukuje tylko po
 
 `FieldOfStudy = {id: number, name: string}`
 
-**Odpowiedzią jest {supervisors: List[Supervisor]}. Struktura `Supervisor` poniżej**
-
-| Nazwa        | Typ          | Wymagany | Opis                             |
-| ------------ | ------------ | -------- | -------------------------------- |
-| id           | number       |          | ID promotora                     |
-| email        | string       |          |                                  |
-| firstName    | string       |          |                                  |
-| lastName     | string       |          |                                  |
-| fieldOfStudy | FieldOfStudy |          | Kierunek + wydział               |
-| freeSpots    | number       |          | Liczba wolnych miejsc            |
-| totalSpots   | number       |          | Liczba wolnych + zajętych miejsc |
+Przykładowy JSON
+```json
+{
+  "count": 8,
+  "next": "http://next-page-url" | null,
+  "previous": "http://prev-page-url" | null,
+  "results": [
+    {
+      "id": 19,
+      "email": "m@agh.edu.pl",
+      "title": null,
+      "first_name": "",
+      "last_name": "",
+      "field_of_study": [
+        {
+          "id": 1,
+          "name": "Informatyka"
+        },
+        {
+          "id": 2,
+          "name": "Informatyka i Systemy Inteligentne"
+        }
+      ],
+      "free_spots": 0,
+      "total_spots": 0
+    },
+    {
+      "id": 20,
+      "email": "n@agh.edu.pl",
+      "title": null,
+      "first_name": "",
+      "last_name": "",
+      "field_of_study": [
+        {
+          "id": 1,
+          "name": "Informatyka"
+        },
+        {
+          "id": 2,
+          "name": "Informatyka i Systemy Inteligentne"
+        }
+      ],
+      "free_spots": 0,
+      "total_spots": 0
+    },
+    {
+      "id": 22,
+      "email": "f@agh.edu.pl",
+      "title": null,
+      "first_name": "",
+      "last_name": "",
+      "field_of_study": [
+        {
+          "id": 1,
+          "name": "Informatyka"
+        }
+      ],
+      "free_spots": 0,
+      "total_spots": 0
+    }
+  ]
+}
+```
 
 # Endpoint POST /supervisor/tags
 

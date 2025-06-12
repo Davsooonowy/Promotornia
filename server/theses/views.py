@@ -1,4 +1,5 @@
 from humps.main import decamelize
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -47,7 +48,6 @@ class ThesisView(APIView):
         ):
             return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
 
-
         serializer = serializers.UpdateThesisSerializer(
             instance=thesis,
             data=data,
@@ -62,7 +62,10 @@ class ThesisView(APIView):
         thesis = models.Thesis.objects.filter(id=thesis_id)
         if thesis.count() > 0:
             thesis = thesis[0]
-            if thesis.owner != request.user:
+            if (
+                thesis.owner != request.user or
+                thesis.status.lower() != "ukryty"
+            ):
                 return Response(status=status.HTTP_403_FORBIDDEN)
             thesis.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -86,6 +89,15 @@ class ThesisStatus(APIView):
             return Response({"message": "Brak statusu w żądaniu"}, status=status.HTTP_400_BAD_REQUEST)
 
         current_status = thesis.status
+
+        if (
+            "ukryty" == current_status.lower() != new_status.lower() and
+            thesis.field_of_study is data.get("field_of_study") is None
+        ):
+            return Response(
+                {"message": "Nie można opublikować pracy dyplomowej bez ustawienia kierunku studiów!"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         valid_transitions = {
             ("Ukryty", "Dostępny"): ["supervisor"],
@@ -148,10 +160,13 @@ class CreateThesisView(APIView):
         thesis.save()
         return Response({"id": thesis.id}, status=status.HTTP_200_OK)
 
-class ThesisListView(APIView):
+class ThesisListView(ListAPIView):
+    serializer_class = serializers.ThesisSerializer
+    pagination_class = PageNumberPagination
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        serializer = serializers.ListThesesSerializer(data=request.GET)
+    def get_queryset(self):
+        serializer = serializers.ListThesesSerializer(data=self.request.GET)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -165,12 +180,14 @@ class ThesisListView(APIView):
         objects = models.Thesis.objects.all().annotate(
             full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
+        if self.request.user.is_student:
+            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list())
 
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
 
         if tags is not None:
-            objects = objects.filter(tags__in=tags)
+            objects = objects.filter(tags__in=tags).distinct()
 
         if search is not None:
             objects = (objects.filter(
@@ -194,32 +211,24 @@ class ThesisListView(APIView):
                     objects = objects.order_by(f"{desc}full_name")
                 case 'date':
                     objects = objects.order_by(f"{desc}date_of_creation")
+        return objects
 
-        paginator = PageNumberPagination()
-        paginator.page_size = ITEMS_PER_PAGE
-        resp = paginator.paginate_queryset(objects, request)
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["discarded_fields"] = ["description", "prerequisites", "producer"]
+        return context
 
-        data = serializers.ThesisSerializer(resp, many=True).data
-
-        for record in data:
-            record.pop('description', None)
-            record.pop('prerequisites', None)
-            if (field := record.get('field_of_study')) is not None:
-                field.pop('description', None)
-            record.pop('producer', None)
-
-        return Response({"theses": data}, status=status.HTTP_200_OK)
-
-class SupervisorListView(APIView):
+class SupervisorListView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+    serializer_class = account_serializers.SupervisorSerializer
 
-    def get(self, request):
-        serializer = serializers.ListSupervisorsSerializer(data=request.GET)
+    def get_queryset(self):
+        serializer = serializers.ListSupervisorsSerializer(data=self.request.GET)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         field_of_study = serializer.validated_data.get('fieldOfStudy')
-        tags = serializer.validated_data.get('tags')
         search = serializer.validated_data.get('search')
         order = serializer.validated_data.get('order')
         ascending = serializer.validated_data.get('ascending')
@@ -233,16 +242,16 @@ class SupervisorListView(APIView):
                 'owned_theses',
                 filter=Q(owned_theses__status__in=taken)
             ),
-            free_spots = ExpressionWrapper(
+            free_spots=ExpressionWrapper(
                 F('total_spots') - F('taken_spots'),
                 output_field=IntegerField()
             ),
         )
 
+        if self.request.user.is_student:
+            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list()).distinct()
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
-        if tags is not None:
-            objects = objects.filter(tags__in=tags)
         if search is not None:
             objects = objects.filter(full_name__icontains=search)
         if order is not None:
@@ -252,17 +261,7 @@ class SupervisorListView(APIView):
                     objects = objects.order_by(f'{desc}last_name')
                 case 'free_spots':
                     objects = objects.order_by(f'{desc}free_spots')
-
-        paginator = PageNumberPagination()
-        paginator.page_size = ITEMS_PER_PAGE
-        resp = paginator.paginate_queryset(objects, request)
-
-        data = account_serializers.SupervisorSerializer(resp, many=True).data
-        for record in data:
-            for field in record['field_of_study']:
-                field.pop('description', None)
-
-        return Response({"supervisors": data}, status=status.HTTP_200_OK)
+        return objects
 
 class TagListView(APIView):
 
