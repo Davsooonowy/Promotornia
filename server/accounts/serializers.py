@@ -90,8 +90,6 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         fields_of_study = data.get('chosenFieldsOfStudy', [])
         if len(fields_of_study) == 0 and user_type.lower() != "dean":
             raise serializers.ValidationError("Należy podać kierunek studiów przy tworzenia użytkownika!")
-        if user_type.lower() == "student" and len(fields_of_study) > 1:
-            raise serializers.ValidationError("Student musi być przypisany tylko do jednego kierunku!")
 
         fos_ids = list(map(lambda fos: fos["id"], fields_of_study))
         fields_of_study = models.FieldOfStudy.objects.filter(id__in=fos_ids)
@@ -165,7 +163,7 @@ class LoginSerializer(TokenObtainPairSerializer):
 class FieldOfStudySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.FieldOfStudy
-        fields = ('id', 'name', 'description')
+        fields = ('id', 'name')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
