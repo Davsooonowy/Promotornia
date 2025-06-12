@@ -206,9 +206,9 @@ export default function SupervisorsList({
             </CardContent>
           </Card>
         ) : (
-          supervisors.map((promoter) => (
+          supervisors.map((supervisor) => (
             <Card
-              key={promoter.id}
+              key={supervisor.id}
               className="bg-background text-foreground transition-shadow hover:shadow-md"
             >
               <CardContent className="pt-6">
@@ -217,18 +217,18 @@ export default function SupervisorsList({
                     <div className="flex items-center gap-2">
                       <User className="text-muted-foreground h-5 w-5" />
                       <Link
-                        href={`${basePath}/${promoter.id}`}
+                        href={`${basePath}/${supervisor.id}`}
                         className="text-lg font-medium hover:underline"
                       >
-                        {promoter.name}
+                        {supervisor.name}
                       </Link>
                     </div>
                     <p className="text-muted-foreground text-sm">
-                      {promoter.email}
+                      {supervisor.email}
                     </p>
-                    <p className="text-sm">Katedra: {promoter.department}</p>
+                    <p className="text-sm">Katedra: {supervisor.department}</p>
                     <p className="text-sm">
-                      Specjalizacja: {promoter.specialization}
+                      Specjalizacja: {supervisor.specialization}
                     </p>
                   </div>
 
@@ -237,12 +237,12 @@ export default function SupervisorsList({
                       <span className="text-sm">Dostępne miejsca:</span>
                       <span
                         className={`font-medium ${
-                          promoter.availableSlots === 0
+                          supervisor.availableSlots === 0
                             ? "text-destructive"
                             : "text-success"
                         }`}
                       >
-                        {promoter.availableSlots}/{promoter.totalSlots}
+                        {supervisor.availableSlots}/{supervisor.totalSlots}
                       </span>
                     </div>
                     <div className="mt-4 flex justify-end gap-2">
@@ -255,7 +255,7 @@ export default function SupervisorsList({
                       </Button>
                       {canEdit &&
                         (currentUserId === undefined ||
-                          currentUserId === promoter.id) && (
+                          currentUserId === supervisor.id) && (
                           <Button size="sm" className="cursor-pointer">
                             Edytuj
                           </Button>

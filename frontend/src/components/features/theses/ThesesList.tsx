@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation"
 import { Tag, ThesisDetails } from "@/util/types"
 import { UserRole } from "@/util/enums"
 import { ThesisBackend } from "@/util/types"
+import { useMutation } from "@tanstack/react-query"
 
 export interface ThesesListProps {
   basePath: string
@@ -59,57 +60,54 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
   const [theses, setTheses] = useState<ThesisDetails[] | null>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
 
-  useEffect(() => {
-    const fetchTheses = async () => {
+  const [shouldFetch, setShouldFetch] = useState(true)
+
+  const thesesMutation = useMutation({
+    mutationFn: async () => {
       setLoading(true)
-      try {
-        const token = localStorage.getItem("token")
-        const response = await fetch(
-          `${apiUrl}/thesis/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&tags=${selectedTags.join(",")}&available=${statusFilter || ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+      const token = localStorage.getItem("token")
+      const response = await fetch(
+        `${apiUrl}/thesis/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&tags=${selectedTags.map((tag) => tag.id).join(",")}&available=${statusFilter || ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        )
+        },
+      )
+      if (!response.ok) throw new Error("Wyszukiwanie tematów nie powiodło się")
+      const data = await response.json()
 
-        if (!response.ok)
-          throw new Error("Wyszukiwanie tematów nie powiodło się")
-        const data = await response.json()
+      const mappedTheses = data.theses.map((thesis: ThesisBackend) => ({
+        id: thesis.id,
+        title: thesis.name,
+        description: thesis.description,
+        prerequisitesDescription: thesis.prerequisites,
+        fieldOfStudy: thesis.field_of_study,
+        tags: thesis.tags,
+        supervisor: thesis.owner.first_name + " " + thesis.owner.last_name,
+        supervisorId: thesis.owner.id,
+        status: thesis.status,
+        createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
+      }))
+      return mappedTheses
+    },
+    onSuccess: (mappedTheses) => {
+      setTheses(mappedTheses)
+      setLoading(false)
+    },
+    onError: (e) => {
+      setLoading(false)
+    },
+  })
 
-        const mappedTheses = data.theses.map((thesis: ThesisBackend) => ({
-          id: thesis.id,
-          title: thesis.name,
-          description: thesis.description,
-          prerequisitesDescription: thesis.prerequisites,
-          fieldOfStudy: thesis.field_of_study,
-          tags: thesis.tags,
-          supervisor: thesis.owner.first_name + " " + thesis.owner.last_name,
-          supervisorId: thesis.owner.id,
-          status: thesis.status,
-          createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
-        }))
-
-        setTheses(mappedTheses)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
+  useEffect(() => {
+    if (shouldFetch) {
+      setShouldFetch(false)
+      thesesMutation.mutate()
     }
-
-    fetchTheses()
-  }, [
-    currentPage,
-    searchQuery,
-    fieldOfStudy,
-    selectedTags,
-    statusFilter,
-    sortField,
-    sortDirection,
-  ])
+  }, [shouldFetch, thesesMutation, currentPage])
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -163,12 +161,21 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
     setCurrentPage(1)
   }
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [])
+  const handleStatusValueChange = (status: string) => {
+    if (status === "null") {
+      setStatusFilter(null)
+    } else {
+      setStatusFilter(status)
+    }
+  }
+
+  const handleFieldOfStudyChange = (fieldOfStudyId: string) => {
+    if (fieldOfStudyId === "null") {
+      setFieldOfStudy(null)
+    } else {
+      setFieldOfStudy(fieldOfStudyId)
+    }
+  }
 
   useEffect(() => {
     setCurrentPage(1)
@@ -204,11 +211,15 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center space-x-2">
                 <Label className="text-foreground">Kierunek studiów:</Label>
-                <Select onValueChange={setFieldOfStudy}>
+                <Select
+                  value={fieldOfStudy || "null"}
+                  onValueChange={handleFieldOfStudyChange}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Wybierz kierunek" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="null">Dowolny</SelectItem>
                     <SelectItem value="1">Informatyka</SelectItem>
                     <SelectItem value="2">Cyberbezpieczeństwo</SelectItem>
                   </SelectContent>
@@ -217,11 +228,15 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
 
               <div className="flex items-center space-x-2">
                 <Label className="text-foreground">Status:</Label>
-                <Select onValueChange={setStatusFilter}>
+                <Select
+                  value={statusFilter || "null"}
+                  onValueChange={handleStatusValueChange}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder="Wybierz status" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="null">Dowolny</SelectItem>
                     <SelectItem value="available">Dostępny</SelectItem>
                     <SelectItem value="noavailable">Zarezerwowany</SelectItem>
                   </SelectContent>
@@ -303,11 +318,11 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleSort("promoter")}
+                  onClick={() => handleSort("supervisor")}
                   className="gap-1"
                 >
                   Promotor
-                  {sortField === "promoter" &&
+                  {sortField === "supervisor" &&
                     (sortDirection === "asc" ? (
                       <SortAsc className="h-4 w-4" />
                     ) : (
@@ -330,6 +345,9 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                 </Button>
               </div>
             </div>
+            <Button className="w-full" onClick={() => thesesMutation.mutate()}>
+              <Search /> Szukaj
+            </Button>
 
             {selectedTags.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
@@ -365,9 +383,9 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
             </CardContent>
           </Card>
         ) : (
-          theses?.map((topic) => (
+          theses?.map((topic, topicIndex) => (
             <Card
-              key={topic.id}
+              key={topicIndex}
               className="bg-card transition-shadow hover:shadow-md"
             >
               <CardContent className="pt-6">
@@ -426,21 +444,6 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                         >
                           Szczegóły
                         </Button>
-                        {/* {canEdit &&
-                          (currentUserId === undefined ||
-                            currentUserId === topic.supervisorId) && (
-                            <Button
-                              size="sm"
-                              className="cursor-pointer"
-                              onClick={() =>
-                                router.push(
-                                  `/protected/supervisor/theses/${topic.id}`,
-                                )
-                              }
-                            >
-                              Edytuj
-                            </Button>
-                          )} */}
                       </div>
                     </div>
                   </div>
