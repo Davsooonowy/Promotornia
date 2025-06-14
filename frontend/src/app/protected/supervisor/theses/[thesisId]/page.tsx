@@ -64,7 +64,6 @@ export default function Thesis() {
   >(null)
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
 
   const { tokenPayload } = useDecodeToken()
 
