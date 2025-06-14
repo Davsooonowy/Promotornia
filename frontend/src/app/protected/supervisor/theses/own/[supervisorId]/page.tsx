@@ -50,12 +50,15 @@ export default function OwnTheses() {
         }
 
         const supervisorData = await supervisorResponse.json()
+        console.log(supervisorData)
 
         const mappedSupervisor: Supervisor = {
           id: supervisorData.id,
           name: `${supervisorData.title} ${supervisorData.first_name} ${supervisorData.last_name}`,
           email: supervisorData.email,
-          department: supervisorData.field_of_study.name,
+          departments: supervisorData.field_of_study.map(
+            (field: { id: number; name: string }) => field.name,
+          ),
           specialization: supervisorData.description || "N/A",
           availableSlots: supervisorData.free_spots,
           totalSlots: supervisorData.total_spots,
