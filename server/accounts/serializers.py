@@ -172,13 +172,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SupervisorSerializer(serializers.ModelSerializer):
     free_spots = serializers.IntegerField(default=0)
+    thesis_count = serializers.IntegerField(default=0)
     total_spots = serializers.IntegerField(default=0)
     field_of_study = FieldOfStudySerializer(read_only=True, many=True)
 
     class Meta:
         model = models.SystemUser
         fields = ('id', 'email', 'title', 'first_name', 'last_name', 'field_of_study',
-                  'free_spots', 'total_spots')
+                  'free_spots', 'thesis_count', 'total_spots')
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
