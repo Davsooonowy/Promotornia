@@ -1,13 +1,19 @@
 "use client"
 import apiUrl from "@/util/apiUrl"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Mail, AlertCircle } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function LabelWithEmail() {
-  const emailQuery = useQuery({
-    queryKey: ["user-email"],
-    queryFn: async () => {
+  const [email, setEmail] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [isError, setIsError] = useState(false)
+  const [shouldFetch, setShouldFetch] = useState(true)
+
+  const emailFetch = useMutation({
+    mutationFn: async () => {
+      setLoading(true)
       const token = localStorage.getItem("token")
       const response = await fetch(`${apiUrl}/user/personal_data/`, {
         method: "GET",
@@ -24,11 +30,23 @@ export default function LabelWithEmail() {
       const data = await response.json()
       return data.email
     },
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    onSuccess: (data) => {
+      setEmail(data)
+      setLoading(false)
+    },
+    onError: () => {
+      setIsError(true)
+    },
   })
 
-  if (emailQuery.isLoading) {
+  useEffect(() => {
+    if (shouldFetch) {
+      setShouldFetch(false)
+      emailFetch.mutate()
+    }
+  }, [shouldFetch, emailFetch])
+
+  if (loading) {
     return (
       <div className="flex items-center gap-3">
         <Mail className="text-muted-foreground h-5 w-5" />
@@ -40,7 +58,7 @@ export default function LabelWithEmail() {
     )
   }
 
-  if (emailQuery.isError) {
+  if (isError) {
     return (
       <div className="text-destructive flex items-center gap-3">
         <AlertCircle className="h-5 w-5" />
@@ -59,7 +77,7 @@ export default function LabelWithEmail() {
       <Mail className="text-muted-foreground h-5 w-5" />
       <div>
         <p className="font-medium">Email</p>
-        <p className="text-muted-foreground text-sm">{emailQuery.data}</p>
+        <p className="text-muted-foreground text-sm">{email}</p>
       </div>
     </div>
   )
