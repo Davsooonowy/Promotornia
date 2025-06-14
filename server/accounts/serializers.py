@@ -80,7 +80,8 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             ):
                 raise serializers.ValidationError("Niepoprawna domena dla danego typu użytkownika")
 
-            user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
+            # user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
+            user_data["password"] = make_password("test")
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
@@ -191,7 +192,17 @@ class SetPasswordSerializer(serializers.Serializer):
 class PersonalDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SystemUser
-        fields = ('first_name', 'last_name', 'email')
+        fields = ('first_name', 'last_name', 'email', 'title', 'total_spots')
+
+    def validate_total_spots(self, value):
+        user = self.instance
+        if user and user.is_supervisor:
+            current_theses = user.owned_theses.count()
+            if value is not None and value < current_theses:
+                raise serializers.ValidationError(
+                    f" Nie można ustawić limitu poniżej liczby aktualnie nadzorowanych prac dyplomowych ({current_theses})."
+                )
+        return value
 
 class SupervisorViewSerializer(serializers.ModelSerializer):
     free_spots = serializers.SerializerMethodField()
