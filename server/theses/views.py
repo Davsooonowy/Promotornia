@@ -50,7 +50,7 @@ class ThesisView(APIView):
                     target_fos = account_models.FieldOfStudy.objects.get(id=target_fos_id)
                 except account_models.FieldOfStudy.DoesNotExist:
                     return Response({"message": "Podany kierunek studiów nie istnieje!"}, status=status.HTTP_400_BAD_REQUEST)
-        if fos is target_fos is None:
+        if target_fos is None:
             target_fos = {}
             data["field_of_study"] = target_fos
         if (
@@ -242,6 +242,7 @@ class SupervisorListView(ListAPIView):
         field_of_study = serializer.validated_data.get('fieldOfStudy')
         search = serializer.validated_data.get('search')
         order = serializer.validated_data.get('order')
+        available = serializer.validated_data.get('available')
         ascending = serializer.validated_data.get('ascending')
 
         objects = account_models.SystemUser.objects.filter(is_supervisor=True)
@@ -249,12 +250,13 @@ class SupervisorListView(ListAPIView):
         taken = ['Zarezerwowany', 'Student zaakceptowany', 'Zatwierdzony']
         objects = objects.annotate(
             full_name=Concat(F('first_name'), Value(' '), F('last_name')),
+            thesis_count=Count('owned_theses'),
             taken_spots=Count(
                 'owned_theses',
                 filter=Q(owned_theses__status__in=taken)
             ),
             free_spots=ExpressionWrapper(
-                F('total_spots') - F('taken_spots'),
+                F('thesis_count') - F('taken_spots'),
                 output_field=IntegerField()
             ),
         )
@@ -272,6 +274,8 @@ class SupervisorListView(ListAPIView):
                     objects = objects.order_by(f'{desc}last_name')
                 case 'free_spots':
                     objects = objects.order_by(f'{desc}free_spots')
+        if available:
+            objects = objects.exclude(free_spots=0)
         return objects
 
 class TagListView(APIView):
@@ -334,6 +338,13 @@ class SupervisorDetailView(APIView):
             )
 
         data = account_serializers.SupervisorSerializer(supervisor).data
+        taken_spots = supervisor.owned_theses.filter(
+            status__in=["Zarezerwowany", "Zatwierdzony", "Student zaakceptowany"]
+        ).count()
+        thesis_count = supervisor.owned_theses.count()
+        print(list(data.keys()))
+        data["thesis_count"] = thesis_count
+        data["free_spots"] = thesis_count - taken_spots
         return Response(data, status=status.HTTP_200_OK)
 
 class ThesisByProducerView(APIView):
