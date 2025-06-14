@@ -41,10 +41,19 @@ class ThesisView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         data = decamelize(request.data)
-
+        fos = thesis.field_of_study
+        target_fos = data.get("field_of_study")
+        if target_fos is not None:
+            target_fos_id = target_fos.get("id")
+            if target_fos_id is not None:
+                try:
+                    target_fos = account_models.FieldOfStudy.objects.get(id=target_fos_id)
+                except account_models.FieldOfStudy.DoesNotExist:
+                    return Response({"message": "Podany kierunek studiów nie istnieje!"}, status=status.HTTP_400_BAD_REQUEST)
+        print(target_fos, fos)
         if (
             thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
-            (thesis.status.lower() != "ukryty" and data.get("field_of_study") is not None)
+            (thesis.status.lower() != "ukryty" and fos != target_fos)
         ):
             return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
 
