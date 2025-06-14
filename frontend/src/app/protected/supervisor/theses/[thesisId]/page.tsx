@@ -1,5 +1,5 @@
 "use client"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { useState, useEffect, useContext } from "react"
 import apiUrl from "@/util/apiUrl"
@@ -33,6 +33,7 @@ import {
 } from "@/components/context/ThesisStatusChangedContext"
 
 export default function Thesis() {
+  const router = useRouter()
   const { thesisId } = useParams<{ thesisId: string }>()
   const numericThesisId = Number(thesisId)
 
@@ -248,15 +249,12 @@ export default function Thesis() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       if (!thesis) throw new Error("Nie znaleziono pracy.")
-      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/`, {
+      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: thesis.id,
-        }),
       })
       if (!response.ok) {
         throw new Error("Nie udało się usunąć pracy.")
@@ -267,6 +265,7 @@ export default function Thesis() {
     },
     onSuccess: () => {
       setMutationSuccessMessage("Usunięto pracę")
+      router.push("/protected/supervisor/profile")
     },
   })
 

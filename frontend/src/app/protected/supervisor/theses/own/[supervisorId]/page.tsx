@@ -50,7 +50,6 @@ export default function OwnTheses() {
         }
 
         const supervisorData = await supervisorResponse.json()
-        console.log(supervisorData)
 
         const mappedSupervisor: Supervisor = {
           id: supervisorData.id,

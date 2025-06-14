@@ -28,17 +28,20 @@ import { FieldOfStudy, Supervisor, SupervisorBackend } from "@/util/types"
 import apiUrl from "@/util/apiUrl"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
+import { UserRole } from "@/util/types"
 
 export interface SupervisorsListProps {
   basePath: string
   canEdit?: boolean
   currentUserId?: number
+  userRole: UserRole
 }
 
 export default function SupervisorsList({
   basePath,
   canEdit = false,
   currentUserId,
+  userRole,
 }: SupervisorsListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
@@ -61,7 +64,7 @@ export default function SupervisorsList({
       setLoading(true)
       const token = localStorage.getItem("token")
       const response = await fetch(
-        `${apiUrl}/supervisors/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&available=${showOnlyWithSlots ? "true" : ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
+        `${apiUrl}/supervisors/list/?page=${currentPage}&search=${searchQuery}&fieldOfStudy=${fieldOfStudy || ""}&available=${showOnlyWithSlots ? true : ""}&order=${sortField || ""}&ascending=${sortDirection === "asc"}`,
         {
           method: "GET",
           headers: {
@@ -86,13 +89,25 @@ export default function SupervisorsList({
         }),
       )
 
-      const fieldsOfStudyRes = await fetch(`${apiUrl}/user/fields_of_study/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      let fieldsOfStudyRes
+
+      if (userRole !== "dean") {
+        fieldsOfStudyRes = await fetch(`${apiUrl}/user/fields_of_study/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+      } else {
+        fieldsOfStudyRes = await fetch(`${apiUrl}/field_of_study/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+      }
 
       if (!fieldsOfStudyRes.ok) {
         throw new Error("Nie udało się pobrać dostępnych kierunków studiów")
@@ -102,7 +117,8 @@ export default function SupervisorsList({
       return {
         mappedSupervisors,
         count: data.count,
-        availableFieldsOfStudy: fields.fields_of_study,
+        availableFieldsOfStudy:
+          userRole !== "dean" ? fields.fields_of_study : fields,
       }
     },
     onError: (e) => {
