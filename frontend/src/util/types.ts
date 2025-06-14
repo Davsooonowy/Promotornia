@@ -97,7 +97,7 @@ interface Supervisor {
   id: number
   name: string
   email: string
-  department: string
+  departments: FieldOfStudy[]
   specialization: string
   availableSlots: number
   totalSlots: number
@@ -109,7 +109,7 @@ interface SupervisorBackend {
   first_name: string
   last_name: string
   email: string
-  field_of_study: FieldOfStudy
+  field_of_study: FieldOfStudy[]
   description: string
   free_spots: number
   total_spots: number

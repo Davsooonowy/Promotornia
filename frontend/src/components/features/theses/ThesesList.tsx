@@ -33,10 +33,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
-import { Tag, ThesisDetails } from "@/util/types"
+import { FieldOfStudy, Tag, ThesisDetails } from "@/util/types"
 import { UserRole } from "@/util/enums"
 import { ThesisBackend } from "@/util/types"
 import { useMutation } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 export interface ThesesListProps {
   basePath: string
@@ -60,6 +61,9 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
   const [theses, setTheses] = useState<ThesisDetails[] | null>([])
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [totalPages, setTotalPages] = useState(0)
+  const [availableFieldsOfStudy, setAvailableFieldsOfStudy] = useState<
+    FieldOfStudy[] | null
+  >(null)
 
   const [shouldFetch, setShouldFetch] = useState(true)
 
@@ -94,14 +98,34 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
         status: thesis.status,
         createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
       }))
-      return { mappedTheses, count: data.count }
+
+      const fieldsOfStudyRes = await fetch(`${apiUrl}/user/fields_of_study/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!fieldsOfStudyRes.ok) {
+        throw new Error("Nie udało się pobrać dostępnych kierunków studiów")
+      }
+      const fields = await fieldsOfStudyRes.json()
+
+      return {
+        mappedTheses,
+        count: data.count,
+        availableFieldsOfStudy: fields.fields_of_study,
+      }
     },
     onSuccess: (data) => {
       setTheses(data.mappedTheses)
       setTotalPages(Math.ceil(data.count / itemsPerPage))
+      setAvailableFieldsOfStudy(data.availableFieldsOfStudy)
       setLoading(false)
     },
-    onError: () => {
+    onError: (e) => {
+      toast.error(e.message)
       setLoading(false)
     },
   })
@@ -137,6 +161,13 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
     }
 
     fetchTags()
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false)
+    }, 500)
+    return () => clearTimeout(timer)
   }, [])
 
   const filteredTags = useMemo(() => {
@@ -178,10 +209,6 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
   }
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery, fieldOfStudy, statusFilter, selectedTags])
-
-  useEffect(() => {
     setVisibleTagsCount(20)
   }, [tagSearchQuery])
 
@@ -220,8 +247,12 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="null">Dowolny</SelectItem>
-                    <SelectItem value="1">Informatyka</SelectItem>
-                    <SelectItem value="2">Cyberbezpieczeństwo</SelectItem>
+                    {availableFieldsOfStudy &&
+                      availableFieldsOfStudy.map((field) => (
+                        <SelectItem key={field.id} value={String(field.id)}>
+                          {field.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -345,7 +376,13 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
                 </Button>
               </div>
             </div>
-            <Button className="w-full" onClick={() => thesesMutation.mutate()}>
+            <Button
+              className="w-full"
+              onClick={() => {
+                thesesMutation.mutate()
+                setCurrentPage(1)
+              }}
+            >
               <Search /> Szukaj
             </Button>
 
