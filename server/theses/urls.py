@@ -15,4 +15,6 @@ urlpatterns = [
     path('theses/<int:thesis_id>/edit/', views.ThesisView.as_view(), name='thesis-edit'),
     path('theses/<int:thesis_id>/status/edit/', views.ThesisStatus.as_view(), name='thesis-status-edit'),
     path('thesis/producer/<int:producer_id>/', views.ThesisByProducerView.as_view(), name='thesis-by-producer'),
+    path('students/available/', views.AvailableStudentsView.as_view(), name='available-students'),
+    path('theses/<int:thesis_id>/assign_student/', views.AssignStudentView.as_view(), name='assign-student'),
 ]
