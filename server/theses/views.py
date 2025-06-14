@@ -192,7 +192,7 @@ class ThesisListView(ListAPIView):
             full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
         if self.request.user.is_student:
-            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list())
+            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list('id', flat=True))
 
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
@@ -260,7 +260,7 @@ class SupervisorListView(ListAPIView):
         )
 
         if self.request.user.is_student:
-            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list()).distinct()
+            objects = objects.filter(field_of_study__in=self.request.user.field_of_study.values_list('id', flat=True)).distinct()
         if field_of_study is not None:
             objects = objects.filter(field_of_study__id=field_of_study)
         if search is not None:
@@ -348,3 +348,39 @@ class ThesisByProducerView(APIView):
             )
         data = serializers.ThesisSerializer(thesis).data
         return Response(data, status=status.HTTP_200_OK)
+
+class AvailableStudentsView(APIView):
+    def get(self, request):
+        assigned_ids = models.Thesis.objects.exclude(producer=None).values_list('producer_id', flat=True)
+        students = account_models.SystemUser.objects.filter(is_student=True).exclude(id__in=assigned_ids)
+        data = account_serializers.UserSerializer(students, many=True).data
+        return Response({'students': data})
+
+class AssignStudentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, thesis_id):
+        try:
+            thesis = models.Thesis.objects.get(id=thesis_id)
+        except models.Thesis.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if thesis.status != "Dostępny" or thesis.owner != request.user:
+            return Response({"message": "Nie można przypisać studenta."}, status=status.HTTP_403_FORBIDDEN)
+
+        student_id = request.data.get("producer_id")
+        if not student_id:
+            return Response({"message": "Brak ID studenta."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = account_models.SystemUser.objects.get(id=student_id, is_student=True)
+        except account_models.SystemUser.DoesNotExist:
+            return Response({"message": "Nie znaleziono studenta."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if models.Thesis.objects.filter(producer_id=student_id).exists():
+            return Response({"message": "Student już ma przypisaną pracę."}, status=status.HTTP_400_BAD_REQUEST)
+
+        thesis.producer = student
+        thesis.status = "Zarezerwowany"
+        thesis.save()
+        return Response(status=status.HTTP_200_OK)

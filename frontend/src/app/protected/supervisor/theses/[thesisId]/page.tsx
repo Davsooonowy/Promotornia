@@ -1,7 +1,7 @@
 "use client"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, useRef } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +31,7 @@ import {
   ThesisStatusChangedContext,
   ThesisStatusChangedContextType,
 } from "@/components/context/ThesisStatusChangedContext"
+import AssignStudentDialog from "@/components/features/thesis/AssignStudentDialog"
 
 export default function Thesis() {
   const { thesisId } = useParams<{ thesisId: string }>()
@@ -62,6 +63,7 @@ export default function Thesis() {
   >(null)
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
 
   const { tokenPayload } = useDecodeToken()
 
@@ -267,6 +269,33 @@ export default function Thesis() {
     },
     onSuccess: () => {
       setMutationSuccessMessage("Usunięto pracę")
+    },
+  })
+
+  const assignStudentMutation = useMutation({
+    mutationFn: async (studentId: number) => {
+      const token = localStorage.getItem("token")
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/assign_student/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            producer_id: studentId,
+          }),
+        })
+      if (!response.ok) {
+        throw new Error("Nie udało się przypisać studenta.")
+      }
+    },
+    onError: (e) => setMutationError(e.message),
+    onSuccess: () => {
+      setMutationSuccessMessage("Przypisano studenta do pracy")
+      thesisFetch.mutate()
+      setAssignDialogOpen(false)
     },
   })
 
@@ -599,6 +628,23 @@ export default function Thesis() {
                   oldStatus="Zarezerwowany"
                   userRole={UserRole.supervisor}
                 />
+              )}
+              {thesis.status === "Dostępny" && editionMode && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => setAssignDialogOpen(true)}
+                  >
+                    <User className="h-4 w-4" />
+                    Przypisz studenta
+                  </Button>
+                  <AssignStudentDialog
+                    open={assignDialogOpen}
+                    setOpen={setAssignDialogOpen}
+                    onAssign={(studentId) => assignStudentMutation.mutate(studentId)}
+                  />
+                </>
               )}
 
               {thesis.status === "Ukryty" && (

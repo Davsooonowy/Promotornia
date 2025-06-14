@@ -80,8 +80,7 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             ):
                 raise serializers.ValidationError("Niepoprawna domena dla danego typu użytkownika")
 
-            # user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
-            user_data["password"] = make_password("test")
+            user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
         if existing_users.count() > 0:
