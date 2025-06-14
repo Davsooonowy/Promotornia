@@ -342,7 +342,6 @@ class SupervisorDetailView(APIView):
             status__in=["Zarezerwowany", "Zatwierdzony", "Student zaakceptowany"]
         ).count()
         thesis_count = supervisor.owned_theses.count()
-        print(list(data.keys()))
         data["thesis_count"] = thesis_count
         data["free_spots"] = thesis_count - taken_spots
         return Response(data, status=status.HTTP_200_OK)
