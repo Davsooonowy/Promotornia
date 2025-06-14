@@ -1,7 +1,7 @@
 "use client"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { useState, useEffect, useContext, useRef } from "react"
+import { useState, useEffect, useContext } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -286,7 +286,8 @@ export default function Thesis() {
           body: JSON.stringify({
             producer_id: studentId,
           }),
-        })
+        },
+      )
       if (!response.ok) {
         throw new Error("Nie udało się przypisać studenta.")
       }
@@ -642,7 +643,9 @@ export default function Thesis() {
                   <AssignStudentDialog
                     open={assignDialogOpen}
                     setOpen={setAssignDialogOpen}
-                    onAssign={(studentId) => assignStudentMutation.mutate(studentId)}
+                    onAssign={(studentId: number) =>
+                      assignStudentMutation.mutate(studentId)
+                    }
                   />
                 </>
               )}

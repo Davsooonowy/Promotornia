@@ -3,8 +3,25 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import apiUrl from "@/util/apiUrl"
 
-export default function AssignStudentDialog({ open, setOpen, onAssign }) {
-  const [students, setStudents] = useState([])
+interface AssignStudentDialogProps {
+  open: boolean
+  setOpen: (open: boolean) => void
+  onAssign: (studentId: number) => void
+}
+
+interface Student {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+}
+
+export default function AssignStudentDialog({
+  open,
+  setOpen,
+  onAssign,
+}: AssignStudentDialogProps) {
+  const [students, setStudents] = useState<Student[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   useEffect(() => {
