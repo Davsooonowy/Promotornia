@@ -301,17 +301,11 @@ class SupervisorThesesView(APIView):
             full_name=Concat(F('owner__first_name'), Value(' '), F('owner__last_name'))
         )
 
-        paginator = PageNumberPagination()
-        paginator.page_size = ITEMS_PER_PAGE
-        paginated_theses = paginator.paginate_queryset(theses, request)
-
-        data = serializers.ThesisSerializer(paginated_theses, many=True).data
+        data = serializers.ThesisSerializer(theses, many=True).data
 
         for record in data:
             record.pop('description', None)
             record.pop('prerequisites', None)
-            if (field := record.get('field_of_study')) is not None:
-                field.pop('description', None)
             record.pop('producer', None)
 
         return Response({"theses": data}, status=status.HTTP_200_OK)
