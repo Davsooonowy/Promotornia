@@ -50,10 +50,12 @@ class ThesisView(APIView):
                     target_fos = account_models.FieldOfStudy.objects.get(id=target_fos_id)
                 except account_models.FieldOfStudy.DoesNotExist:
                     return Response({"message": "Podany kierunek studiów nie istnieje!"}, status=status.HTTP_400_BAD_REQUEST)
-        print(target_fos, fos)
+        if fos is target_fos is None:
+            target_fos = {}
+            data["field_of_study"] = target_fos
         if (
             thesis.status.lower() in ["zatwierdzony", "student zaakceptowany"] or
-            (thesis.status.lower() != "ukryty" and fos != target_fos)
+            (thesis.status.lower() != "ukryty" and None is not fos != target_fos)
         ):
             return Response({"message": "Nieodpowiedni status do modyfikacji"}, status=status.HTTP_403_FORBIDDEN)
 
