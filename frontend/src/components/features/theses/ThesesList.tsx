@@ -99,13 +99,25 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
         createdAt: new Date(thesis.date_of_creation).toLocaleDateString(),
       }))
 
-      const fieldsOfStudyRes = await fetch(`${apiUrl}/user/fields_of_study/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      let fieldsOfStudyRes
+
+      if (userRole !== "dean") {
+        fieldsOfStudyRes = await fetch(`${apiUrl}/user/fields_of_study/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+      } else {
+        fieldsOfStudyRes = await fetch(`${apiUrl}/field_of_study/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+      }
 
       if (!fieldsOfStudyRes.ok) {
         throw new Error("Nie udało się pobrać dostępnych kierunków studiów")
@@ -115,7 +127,8 @@ export default function ThesesList({ basePath, userRole }: ThesesListProps) {
       return {
         mappedTheses,
         count: data.count,
-        availableFieldsOfStudy: fields.fields_of_study,
+        availableFieldsOfStudy:
+          userRole !== "dean" ? fields.fields_of_study : fields,
       }
     },
     onSuccess: (data) => {
