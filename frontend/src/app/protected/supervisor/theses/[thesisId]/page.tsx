@@ -644,6 +644,7 @@ export default function Thesis() {
                     onAssign={(studentId: number) =>
                       assignStudentMutation.mutate(studentId)
                     }
+                    thesisId={numericThesisId}
                   />
                 </>
               )}

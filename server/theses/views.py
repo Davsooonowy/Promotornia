@@ -360,11 +360,32 @@ class ThesisByProducerView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 class AvailableStudentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        assigned_ids = models.Thesis.objects.exclude(producer=None).values_list('producer_id', flat=True)
-        students = account_models.SystemUser.objects.filter(is_student=True).exclude(id__in=assigned_ids)
-        data = account_serializers.UserSerializer(students, many=True).data
-        return Response({'students': data})
+        thesis_id = request.query_params.get("thesis_id")
+        if not thesis_id:
+            return Response({"message": "Brak ID pracy."}, status=400)
+        try:
+            thesis = models.Thesis.objects.get(id=thesis_id)
+        except models.Thesis.DoesNotExist:
+            return Response({"message": "Nie znaleziono pracy."}, status=404)
+        field_of_study = thesis.field_of_study
+        students = account_models.SystemUser.objects.filter(
+            is_student=True,
+            field_of_study=field_of_study,
+            thesis_producer__isnull=True
+        )
+        data = [
+            {
+                "id": s.id,
+                "first_name": s.first_name,
+                "last_name": s.last_name,
+                "email": s.email,
+            }
+            for s in students
+        ]
+        return Response({"students": data})
 
 class AssignStudentView(APIView):
     permission_classes = [IsAuthenticated]
