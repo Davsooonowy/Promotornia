@@ -40,8 +40,6 @@ export interface SupervisorsListProps {
 
 export default function SupervisorsList({
   basePath,
-  canEdit = false,
-  currentUserId,
   userRole,
 }: SupervisorsListProps) {
   const router = useRouter()
