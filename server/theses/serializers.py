@@ -53,7 +53,6 @@ class UpdateThesisSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, default="")
     prerequisites_description = serializers.CharField(required=False, default="")
     tags = serializers.ListField(required=False, default=[])
-    producer_id = serializers.IntegerField(required=False, default=None)
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")
@@ -111,6 +110,7 @@ class UpdateThesisSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags")
         for key, value in validated_data.items():
+            print(key, value)
             setattr(instance, key, value)
         instance.save()
         instance.tags.set(tags)
