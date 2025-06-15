@@ -110,7 +110,6 @@ class UpdateThesisSerializer(serializers.Serializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags")
         for key, value in validated_data.items():
-            print(key, value)
             setattr(instance, key, value)
         instance.save()
         instance.tags.set(tags)
