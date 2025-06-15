@@ -296,6 +296,7 @@ export default function Thesis() {
       setMutationSuccessMessage("Przypisano studenta do pracy")
       thesisFetch.mutate()
       setAssignDialogOpen(false)
+      setHasUnsavedChanges(false)
     },
   })
 

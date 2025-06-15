@@ -65,6 +65,18 @@ export default function AssignStudentDialog({
             ))}
           </SelectContent>
         </Select>
+        <ul className="space-y-2">
+          <li className="text-red-500">Niezapisane zmiany zostaną anulowane</li>
+          <li>
+            Nadal będzie można edytować zawartość pracy, dopóki nie dokonasz
+            &quot;akceptacji&quot; studenta
+          </li>
+          <li>
+            Ewentualna obecna rezerwacja studenta zostanie anulowana i
+            przypisany zostanie nowy student
+          </li>
+          <li></li>
+        </ul>
         <Button
           onClick={() => selectedId && onAssign(selectedId)}
           disabled={!selectedId}
