@@ -31,6 +31,7 @@ import {
   ThesisStatusChangedContext,
   ThesisStatusChangedContextType,
 } from "@/components/context/ThesisStatusChangedContext"
+import AssignStudentDialog from "@/components/features/thesis/AssignStudentDialog"
 
 export default function Thesis() {
   const router = useRouter()
@@ -63,6 +64,7 @@ export default function Thesis() {
   >(null)
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
 
   const { tokenPayload } = useDecodeToken()
 
@@ -266,6 +268,35 @@ export default function Thesis() {
     onSuccess: () => {
       setMutationSuccessMessage("Usunięto pracę")
       router.push("/protected/supervisor/profile")
+    },
+  })
+
+  const assignStudentMutation = useMutation({
+    mutationFn: async (studentId: number) => {
+      const token = localStorage.getItem("token")
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/assign_student/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            producer_id: studentId,
+          }),
+        },
+      )
+      if (!response.ok) {
+        throw new Error("Nie udało się przypisać studenta.")
+      }
+    },
+    onError: (e) => setMutationError(e.message),
+    onSuccess: () => {
+      setMutationSuccessMessage("Przypisano studenta do pracy")
+      thesisFetch.mutate()
+      setAssignDialogOpen(false)
+      setHasUnsavedChanges(false)
     },
   })
 
@@ -598,6 +629,26 @@ export default function Thesis() {
                   oldStatus="Zarezerwowany"
                   userRole={UserRole.supervisor}
                 />
+              )}
+              {thesis.status === "Dostępny" && editionMode && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => setAssignDialogOpen(true)}
+                  >
+                    <User className="h-4 w-4" />
+                    Przypisz studenta
+                  </Button>
+                  <AssignStudentDialog
+                    open={assignDialogOpen}
+                    setOpen={setAssignDialogOpen}
+                    onAssign={(studentId: number) =>
+                      assignStudentMutation.mutate(studentId)
+                    }
+                    thesisId={numericThesisId}
+                  />
+                </>
               )}
 
               {thesis.status === "Ukryty" && (

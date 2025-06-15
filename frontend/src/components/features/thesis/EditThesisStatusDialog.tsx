@@ -63,7 +63,7 @@ export default function EditThesisStatusDialog(props: {
         <Label>
           Czy jesteś pewien? Ta akcja będzie miała następujące konsekwencje:
         </Label>
-        <ul>
+        <ul className="space-y-2">
           {props.userRole === "supervisor" && (
             <li className="text-red-500">
               Niezapisane zmiany zostaną anulowane
@@ -94,7 +94,8 @@ export default function EditThesisStatusDialog(props: {
               <li>Student otrzyma prośbę o zatwierdzenie realizacji tematu</li>
               {props.thesis?.reservedBy && (
                 <li className="text-red-500">
-                  Nie będzie można już edytować zawartości pracy
+                  Nie będzie można już edytować zawartości pracy, chyba, że
+                  student zrezygnuje
                 </li>
               )}
             </>
