@@ -134,6 +134,13 @@ export default function ChangePersonalData() {
     setEditPersonalData(false)
     setName((name) => ({ ...name, current: name.initial }))
     setSurname((surname) => ({ ...surname, current: surname.initial }))
+    if (isPromoter) {
+      setTitle((title) => ({ ...title, current: title.initial }))
+      setTotalSpots((totalSpots) => ({
+        ...totalSpots,
+        current: totalSpots.initial,
+      }))
+    }
   }
 
   return (
