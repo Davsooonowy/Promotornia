@@ -1,4 +1,5 @@
 "use client"
+import ChangeDescription from "@/components/features/profile/ChangeDescription"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
@@ -37,7 +38,7 @@ export default function Supervisor() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       const response = await fetch(
-        `${apiUrl}/user/supervisor/${numericSupervisorId}/`,
+        `${apiUrl}/user/supervisor/my_page/`,
         {
           method: "GET",
           headers: {
@@ -120,7 +121,7 @@ export default function Supervisor() {
             </div>
             <div>
               <Label>Opis:</Label>
-              <p className="mt-1">{supervisor.description}</p>
+              <ChangeDescription />
             </div>
           </CardContent>
         </div>

@@ -15,4 +15,5 @@ urlpatterns = [
     path('user/fields_of_study/', views.FieldOfStudyListView.as_view(), name='fields_of_study'),
     path('user/supervisor/<int:supervisor_id>/', views.SupervisorDetailView.as_view(), name='supervisor_profile'),
     path('user/description/', views.DescriptionView.as_view(), name='description_view'),
+    path('user/supervisor/my_page/', views.PersonalSupervisorView.as_view(), name='sup_editable_profile'),
 ]
