@@ -119,8 +119,7 @@ export default function Supervisor() {
                 )}
               </div>
             </div>
-            <div>
-              <Label>Opis:</Label>
+            <div className="w-full max-w-md">
               <ChangeDescription />
             </div>
           </CardContent>

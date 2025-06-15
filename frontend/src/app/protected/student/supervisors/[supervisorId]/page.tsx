@@ -77,7 +77,7 @@ export default function Supervisor() {
 
   useEffect(() => {
     supervisorFetch.mutate()
-  }, [supervisorFetch])
+  }, [])
 
   useEffect(() => {
     if (fetchError) {
@@ -119,7 +119,7 @@ export default function Supervisor() {
               </div>
             </div>
             <div>
-              <Label>Opis:</Label>
+              <Label>Specjaliza:</Label>
               <p className="mt-1">{supervisor.description}</p>
             </div>
           </CardContent>
