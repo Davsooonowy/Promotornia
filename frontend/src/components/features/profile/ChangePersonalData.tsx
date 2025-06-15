@@ -12,9 +12,14 @@ import { LoadingErrorState } from "@/components/ui/loading-error-state"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { showErrorToast } from "@/lib/error-handling"
 import { toast } from "sonner"
+import useDecodeToken from "@/hooks/useDecodeToken"
 
 export default function ChangePersonalData() {
   const [editPersonalData, setEditPersonalData] = useState(false)
+  const [title, setTitle] = useState<{ initial: string; current: string }>({
+    initial: "",
+    current: "",
+  })
   const [name, setName] = useState<{ initial: string; current: string }>({
     initial: "",
     current: "",
@@ -23,10 +28,19 @@ export default function ChangePersonalData() {
     initial: "",
     current: "",
   })
+  const [totalSpots, setTotalSpots] = useState<{
+    initial: string
+    current: string
+  }>({
+    initial: "",
+    current: "",
+  })
   const [isSuccess, setIsSuccess] = useState<boolean>(false)
   const [shouldFetch, setShouldFetch] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { tokenPayload } = useDecodeToken()
+  const isPromoter = tokenPayload?.role === "supervisor"
 
   const personalDataFetch = useMutation({
     mutationFn: async () => {
@@ -53,6 +67,10 @@ export default function ChangePersonalData() {
     onSuccess: (data) => {
       setName({ current: data.first_name, initial: data.first_name })
       setSurname({ current: data.last_name, initial: data.last_name })
+      if (isPromoter) {
+        setTitle({ current: data.title, initial: data.title })
+        setTotalSpots({ current: data.total_spots, initial: data.total_spots })
+      }
       setLoading(false)
     },
   })
@@ -75,8 +93,10 @@ export default function ChangePersonalData() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            title: title.current,
             first_name: name.current,
             last_name: surname.current,
+            total_spots: Number(totalSpots.current),
           }),
         })
 
@@ -114,6 +134,13 @@ export default function ChangePersonalData() {
     setEditPersonalData(false)
     setName((name) => ({ ...name, current: name.initial }))
     setSurname((surname) => ({ ...surname, current: surname.initial }))
+    if (isPromoter) {
+      setTitle((title) => ({ ...title, current: title.initial }))
+      setTotalSpots((totalSpots) => ({
+        ...totalSpots,
+        current: totalSpots.initial,
+      }))
+    }
   }
 
   return (
@@ -128,6 +155,23 @@ export default function ChangePersonalData() {
             resetError={() => personalDataFetch.mutate()}
           >
             <>
+              {isPromoter && (
+                <>
+                  <Label>Tytuł:</Label>
+                  <Input
+                    disabled={!editPersonalData}
+                    onInput={(e) => {
+                      const newTitle = e.currentTarget.value
+                      setTitle((title) => ({ ...title, current: newTitle }))
+                    }}
+                    onChange={(e) => {
+                      const newTitle = e.currentTarget.value
+                      setTitle((title) => ({ ...title, current: newTitle }))
+                    }}
+                    value={title.current}
+                  />
+                </>
+              )}
               <Label>Imię:</Label>
               <Input
                 disabled={!editPersonalData}
@@ -154,6 +198,29 @@ export default function ChangePersonalData() {
                 }}
                 value={surname.current}
               />
+              {isPromoter && (
+                <>
+                  <Label>Limit prac inżynierskich:</Label>
+                  <Input
+                    disabled={!editPersonalData}
+                    onInput={(e) => {
+                      const newTotalSpots = e.currentTarget.value
+                      setTotalSpots((totalSpots) => ({
+                        ...totalSpots,
+                        current: newTotalSpots,
+                      }))
+                    }}
+                    onChange={(e) => {
+                      const newTotalSpots = e.currentTarget.value
+                      setTotalSpots((totalSpots) => ({
+                        ...totalSpots,
+                        current: newTotalSpots,
+                      }))
+                    }}
+                    value={totalSpots.current}
+                  />
+                </>
+              )}
 
               {isSuccess && (
                 <div className="flex items-center gap-2 text-green-600">

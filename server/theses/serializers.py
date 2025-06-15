@@ -53,7 +53,6 @@ class UpdateThesisSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, default="")
     prerequisites_description = serializers.CharField(required=False, default="")
     tags = serializers.ListField(required=False, default=[])
-    producer_id = serializers.IntegerField(required=False, default=None)
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")

@@ -29,6 +29,7 @@ import apiUrl from "@/util/apiUrl"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { UserRole } from "@/util/types"
+import { useRouter } from "next/navigation"
 
 export interface SupervisorsListProps {
   basePath: string
@@ -39,10 +40,10 @@ export interface SupervisorsListProps {
 
 export default function SupervisorsList({
   basePath,
-  canEdit = false,
-  currentUserId,
   userRole,
 }: SupervisorsListProps) {
+  const router = useRouter()
+
   const [searchQuery, setSearchQuery] = useState("")
   const [fieldOfStudy, setFieldOfStudy] = useState<string | null>(null)
   const [showOnlyWithSlots, setShowOnlyWithSlots] = useState(false)
@@ -324,16 +325,12 @@ export default function SupervisorsList({
                         size="sm"
                         variant="outline"
                         className="cursor-pointer"
+                        onClick={() =>
+                          router.push(`${basePath}/${supervisor.id}`)
+                        }
                       >
                         Szczegóły
                       </Button>
-                      {canEdit &&
-                        (currentUserId === undefined ||
-                          currentUserId === supervisor.id) && (
-                          <Button size="sm" className="cursor-pointer">
-                            Edytuj
-                          </Button>
-                        )}
                     </div>
                   </div>
                 </div>
