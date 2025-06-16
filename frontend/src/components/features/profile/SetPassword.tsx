@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import { showErrorToast } from "@/lib/error-handling"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 export default function SetPassword() {
   const [token, setToken] = useState<string>("")
@@ -25,6 +26,7 @@ export default function SetPassword() {
 
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState<boolean>(false)
+  const router = useRouter()
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -109,7 +111,10 @@ export default function SetPassword() {
         repeatedNewPassword: "",
       })
 
-      setTimeout(() => setIsSuccess(false), 3000)
+      setTimeout(() => {
+        setIsSuccess(false)
+        router.push("/")
+      }, 2000)
     },
   })
 

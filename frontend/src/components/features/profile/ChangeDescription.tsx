@@ -123,7 +123,7 @@ export default function ChangeDescription() {
             resetError={() => descriptionFetch.mutate()}
           >
             <>
-              <Label>Opis zainteresowań:</Label>
+              <Label>Specjalizacja:</Label>
               <Textarea
                 disabled={!editMode}
                 value={description.current}
@@ -133,7 +133,7 @@ export default function ChangeDescription() {
                     current: e.target.value,
                   }))
                 }
-                className="min-h-[120px]"
+                className="min-h-[60px]"
               />
 
               {isSuccess && (

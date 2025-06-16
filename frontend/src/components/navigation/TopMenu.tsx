@@ -300,6 +300,10 @@ export function SupervisorTopMenu() {
           href: "/protected/supervisor/theses",
           text: "Lista tematów",
         },
+        {
+          href: "/protected/supervisor/my_page",
+          text: "Edytuj profil publiczny",
+        },
       ]}
       userRoleHref="supervisor"
       roleName="Promotor"

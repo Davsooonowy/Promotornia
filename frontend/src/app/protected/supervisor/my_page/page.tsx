@@ -1,13 +1,14 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import ChangeDescription from "@/components/features/profile/ChangeDescription"
 import { useMutation } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Mail, User, GraduationCap, BookOpen, Users } from "lucide-react"
+import useDecodeToken from "@/hooks/useDecodeToken"
+import { User, Mail, BookOpen, GraduationCap, Users } from "lucide-react"
 
 type FieldOfStudy = {
   id: number
@@ -28,26 +29,23 @@ type SupervisorDetails = {
 }
 
 export default function Supervisor() {
-  const { supervisorId } = useParams<{ supervisorId: string }>()
-  const numericSupervisorId = Number(supervisorId)
-
   const [supervisor, setSupervisor] = useState<SupervisorDetails | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [shouldFetch, setShouldFetch] = useState(true)
 
+  const { tokenPayload } = useDecodeToken()
+  const canEdit = tokenPayload
+
   const supervisorFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(
-        `${apiUrl}/user/supervisor/${numericSupervisorId}/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await fetch(`${apiUrl}/user/supervisor/my_page/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      )
+      })
 
       if (!response.ok) {
         throw new Error("Nie znaleziono promotora.")
@@ -55,7 +53,7 @@ export default function Supervisor() {
 
       const data = await response.json()
 
-      const supervisor: SupervisorDetails = {
+      return {
         id: data.id,
         email: data.email,
         first_name: data.first_name,
@@ -66,15 +64,9 @@ export default function Supervisor() {
         free_spots: data.free_spots,
         field_of_study: data.field_of_study,
       }
-
-      return supervisor
     },
-    onError: (e) => {
-      setFetchError(e.message)
-    },
-    onSuccess: (supervisor) => {
-      setSupervisor(supervisor)
-    },
+    onError: (e) => setFetchError(e.message),
+    onSuccess: (data) => setSupervisor(data),
   })
 
   useEffect(() => {
@@ -86,9 +78,7 @@ export default function Supervisor() {
 
   useEffect(() => {
     if (fetchError) {
-      toast.error("Błąd", {
-        description: fetchError,
-      })
+      toast.error("Błąd", { description: fetchError })
     }
   }, [fetchError])
 
@@ -148,13 +138,19 @@ export default function Supervisor() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                Opis specjalizacji
+                Opis specjalizacji:
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {supervisor.description || "Brak opisu"}
-              </p>
+              {canEdit ? (
+                <div className="mt-4">
+                  <ChangeDescription />
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {supervisor.description || "Brak opisu"}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
