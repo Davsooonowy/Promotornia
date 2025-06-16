@@ -303,7 +303,10 @@ export default function SupervisorsList({
                       Katedry: {supervisor.departments.join(", ")}
                     </p>
                     <p className="text-sm">
-                      Specjalizacja: {supervisor.specialization}
+                      Specjalizacja:{" "}
+                      {supervisor.specialization.length > 60
+                        ? supervisor.specialization.substring(0, 60) + "..."
+                        : supervisor.specialization}
                     </p>
                   </div>
 
