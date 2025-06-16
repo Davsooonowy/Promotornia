@@ -8,14 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import useDecodeToken from "@/hooks/useDecodeToken"
-import {
-  User,
-  Mail,
-  Settings,
-  BookOpen,
-  GraduationCap,
-  Users,
-} from "lucide-react"
+import { User, Mail, BookOpen, GraduationCap, Users } from "lucide-react"
 
 type FieldOfStudy = {
   id: number
@@ -38,6 +31,7 @@ type SupervisorDetails = {
 export default function Supervisor() {
   const [supervisor, setSupervisor] = useState<SupervisorDetails | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [shouldFetch, setShouldFetch] = useState(true)
 
   const { tokenPayload } = useDecodeToken()
   const canEdit = tokenPayload
@@ -76,8 +70,11 @@ export default function Supervisor() {
   })
 
   useEffect(() => {
-    supervisorFetch.mutate()
-  }, [])
+    if (shouldFetch) {
+      setShouldFetch(false)
+      supervisorFetch.mutate()
+    }
+  }, [shouldFetch, supervisorFetch])
 
   useEffect(() => {
     if (fetchError) {
@@ -130,7 +127,9 @@ export default function Supervisor() {
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">Brak przypisanych kierunków</p>
+                <p className="text-muted-foreground text-sm">
+                  Brak przypisanych kierunków
+                </p>
               )}
             </CardContent>
           </Card>
@@ -148,7 +147,7 @@ export default function Supervisor() {
                   <ChangeDescription />
                 </div>
               ) : (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {supervisor.description || "Brak opisu"}
                 </p>
               )}
@@ -164,7 +163,7 @@ export default function Supervisor() {
                 Dostępność
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm space-y-2">
+            <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Łączna liczba miejsc:</span>
                 <span>{supervisor.total_spots}</span>

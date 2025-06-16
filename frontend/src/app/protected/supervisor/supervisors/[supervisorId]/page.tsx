@@ -33,6 +33,7 @@ export default function Supervisor() {
 
   const [supervisor, setSupervisor] = useState<SupervisorDetails | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [shouldFetch, setShouldFetch] = useState(true)
 
   const supervisorFetch = useMutation({
     mutationFn: async () => {
@@ -77,8 +78,11 @@ export default function Supervisor() {
   })
 
   useEffect(() => {
-    supervisorFetch.mutate()
-  }, [])
+    if (shouldFetch) {
+      setShouldFetch(false)
+      supervisorFetch.mutate()
+    }
+  }, [shouldFetch, supervisorFetch])
 
   useEffect(() => {
     if (fetchError) {
@@ -148,7 +152,7 @@ export default function Supervisor() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
                 {supervisor.description || "Brak opisu"}
               </p>
             </CardContent>
@@ -163,7 +167,7 @@ export default function Supervisor() {
                 Dostępność
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm space-y-2">
+            <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Łączna liczba miejsc:</span>
                 <span>{supervisor.total_spots}</span>
