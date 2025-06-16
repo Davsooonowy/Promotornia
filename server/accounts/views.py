@@ -41,14 +41,17 @@ class DeanView(APIView):
             result = serializer.save()
             # mailing logic
             for user in result:
+                otp_ttl_days = 2
                 otp = OneTimePasswordLink.objects.create(
                     user=user,
-                    expires_at=timezone.now() + timedelta(hours=1)
+                    expires_at=timezone.now() + timedelta(days=otp_ttl_days)
                 )
                 url = f"{os.getenv('CORS_ALLOWED_ORIGINS')}/set_password?{urlencode({'token': str(otp.token)})}"
+                subject = "Dostęp do systemu DyplomNet"
+                message = f"Witaj w systemie DyplomNet!\n\nOtwórz poniższy link aby ustawić swoje hasło dostępu. Link jest ważny {otp_ttl_days} dni.\n\n{url}\n\nW razie utraty ważności linku skontaktuj się z dziekanatem."
                 send_mail(
-                    subject='Ustaw swoje hasło',
-                    message=f"Otwórz link, aby ustawić hasło:\n\n{url}",
+                    subject=subject,
+                    message=message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
                     fail_silently=False,
