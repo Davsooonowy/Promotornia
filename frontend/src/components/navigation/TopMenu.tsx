@@ -32,6 +32,7 @@ import {
   ThesisStatusChangedContext,
   ThesisStatusChangedContextType,
 } from "../context/ThesisStatusChangedContext"
+import { toast } from "sonner"
 
 interface NavbarProps {
   navItems: NavigationItem[]
@@ -43,12 +44,54 @@ export function Navbar({ navItems, userRoleHref, roleName }: NavbarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
+  const [name, setName] = useState<string | null>(null)
+  const [surname, setSurname] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [shouldFetch, setShouldFetch] = useState(true)
+
   const { theme, setTheme } = useTheme()
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     router.push("/")
   }
+
+  const personalDataFetch = useMutation({
+    mutationFn: async () => {
+      setLoading(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${apiUrl}/user/personal_data/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Błąd ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data
+    },
+    onError: (err) => {
+      toast.error(err.message)
+      setLoading(false)
+    },
+    onSuccess: (data) => {
+      setName(data.first_name)
+      setSurname(data.last_name)
+      setLoading(false)
+    },
+  })
+
+  useEffect(() => {
+    if (shouldFetch) {
+      setShouldFetch(false)
+      personalDataFetch.mutate()
+    }
+  }, [shouldFetch, personalDataFetch])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,7 +153,11 @@ export function Navbar({ navItems, userRoleHref, roleName }: NavbarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <User className="h-4 w-4" />
-                <span className="hidden md:inline-block">{roleName}</span>
+                <span className="hidden md:inline-block">
+                  {loading || roleName === "Dziekanat"
+                    ? roleName
+                    : name + " " + surname}
+                </span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
