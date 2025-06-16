@@ -8,3 +8,4 @@ dotenv
 pyhumps
 python-dateutil
 humps
+psycopg2
