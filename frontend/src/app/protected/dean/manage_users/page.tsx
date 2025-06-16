@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useSearchParams } from "next/navigation"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import { FaPlus } from "react-icons/fa"
 import { useMutation } from "@tanstack/react-query"
 import { NewUser, FieldOfStudy, NewUserScheme } from "@/util/types"
@@ -10,6 +10,10 @@ import NewUserCard from "@/components/features/manage_users/NewUserCard"
 import ActionDialog from "@/components/features/manage_users/ActionDialog"
 import apiUrl from "@/util/apiUrl"
 import { toast } from "sonner"
+import Papa from "papaparse"
+import { Input } from "@/components/ui/input"
+import { mergeUniqueUsers } from "@/util/mergeUniqueUsers"
+import { ArrowDownToLine, ArrowUpToLine, Ban, FileDown } from "lucide-react"
 
 const actionToLabel = new Map([
   ["addUsers", "Dodaj użytkowników"],
@@ -32,6 +36,9 @@ export default function ManageUsers() {
   const [chosenFieldsOfStudy, setChosenFieldsOfStudy] = useState<
     FieldOfStudy[]
   >([])
+
+  const fileInput = useRef<HTMLInputElement | null>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const actionMutation = useMutation({
     mutationFn: async () => {
@@ -167,47 +174,138 @@ export default function ManageUsers() {
     setNewUsers((state) => state.filter((user) => user.key !== key))
   }
 
+  const handleFileImport = () => {
+    if (!fileInput.current) return
+    const file = fileInput.current.files?.[0]
+
+    if (file) {
+      Papa.parse<{ email: string }>(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const importedUsers = results.data.map((row, index) => ({
+            email: row.email.trim(),
+            emailError: null,
+            key: nextUserKey + index,
+          }))
+
+          const { users, duplicates } = mergeUniqueUsers(
+            newUsers,
+            importedUsers,
+          )
+
+          setNewUsers(users)
+          setNextUserKey(nextUserKey + importedUsers.length)
+
+          if (duplicates > 0) {
+            toast.warning(`Pominięto ${duplicates} duplikatów adresów email.`)
+          }
+        },
+      })
+    }
+  }
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
+  }
+
+  const scrollToNextError = () => {
+    const index = newUsers.findIndex((user) => user.emailError)
+    if (index !== -1 && cardRefs.current[index]) {
+      cardRefs.current[index]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
+    } else {
+      toast.info("Brak kolejnych błędów do pokazania.")
+    }
+  }
+
   return (
-    <div className="w-full space-y-4">
-      <Label className="items-start text-4xl">
-        Zarządzanie {userType === "supervisor" ? "promotorami" : "studentami"}
-      </Label>
-      <div className="mt-4 flex flex-col space-y-4">
-        <Button className="cursor-pointer self-start">
-          Zaimportuj {userType === "supervisor" ? "promotorów" : "studentów"} z
-          pliku
-        </Button>
-        <ActionDialog
-          actionToLabel={actionToLabel}
-          userType={userType}
-          setAction={setAction}
-          action={action}
-          expirationDate={expirationDate}
-          setExpirationDate={setExpirationDate}
-          setChosenFieldsOfStudy={setChosenFieldsOfStudy}
-          chosenFieldsOfStudy={chosenFieldsOfStudy}
-          setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
-          chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
-          actionMutation={actionMutation}
-        />
-      </div>
-      <div className="mx-auto max-w-3xl space-y-4">
-        {newUsers.map((newUser) => (
-          <NewUserCard
-            key={newUser.key}
-            newUser={newUser}
-            handleRemoveUser={handleRemoveUser}
-            handleUpdateEmail={handleUpdateEmail}
-            error={newUser.emailError}
+    <>
+      <div className="w-full space-y-4">
+        <Label className="items-start text-4xl">
+          Zarządzanie {userType === "supervisor" ? "promotorami" : "studentami"}
+        </Label>
+        <div className="mt-4 flex flex-col space-y-4">
+          <Label>
+            <FileDown />
+            Zaimportuj {userType === "supervisor"
+              ? "promotorów"
+              : "studentów"}{" "}
+            z pliku CSV. Wymagania: kolumna &apos;email&apos; musi być zawarta w
+            pliku
+          </Label>
+          <Label>
+            Uwaga! Zanim zaczniesz dodawać użytkowników, upewnij się, że są
+            dostępne odpowiednie kierunki studiów. Możesz je znaleźć w zakładce
+            &quot;Pozostałe akcje&quot;
+          </Label>
+          <div className="flex">
+            <Input type="file" accept=".csv" className="w-96" ref={fileInput} />
+            <Button onClick={handleFileImport}>Zaimportuj</Button>
+          </div>
+          <ActionDialog
+            actionToLabel={actionToLabel}
+            userType={userType}
+            setAction={setAction}
+            action={action}
+            expirationDate={expirationDate}
+            setExpirationDate={setExpirationDate}
+            setChosenFieldsOfStudy={setChosenFieldsOfStudy}
+            chosenFieldsOfStudy={chosenFieldsOfStudy}
+            setChosenFieldsOfStudyCount={setChosenFieldsOfStudyCount}
+            chosenFieldsOfStudyCount={chosenFieldsOfStudyCount}
+            actionMutation={actionMutation}
+            mergeUniqueUsers={mergeUniqueUsers}
+            newUsers={newUsers}
+            setNewUsers={setNewUsers}
+            nextUserKey={nextUserKey}
+            setNextUserKey={setNextUserKey}
           />
-        ))}
+        </div>
+        <div className="mx-auto max-w-3xl space-y-4">
+          {newUsers.map((newUser, index) => (
+            <div
+              ref={(el) => {
+                cardRefs.current[index] = el
+              }}
+              key={newUser.key}
+            >
+              <NewUserCard
+                newUser={newUser}
+                handleRemoveUser={handleRemoveUser}
+                handleUpdateEmail={handleUpdateEmail}
+                error={newUser.emailError}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex w-full justify-center">
+          <Button onClick={handleAddNewUser} className="mb-4 cursor-pointer">
+            <FaPlus />
+            <p>Więcej użytkowników</p>
+          </Button>
+        </div>
       </div>
-      <div className="flex w-full justify-center">
-        <Button onClick={handleAddNewUser} className="mb-4 cursor-pointer">
-          <FaPlus />
-          <p>Więcej użytkowników</p>
+      <div className="fixed right-12 bottom-24 flex gap-4">
+        <Button variant="default" onClick={scrollToTop}>
+          <ArrowUpToLine />
+          Skocz na górę
+        </Button>
+        <Button variant="default" onClick={scrollToBottom}>
+          <ArrowDownToLine />
+          Skocz na dół
+        </Button>
+        <Button variant="destructive" onClick={scrollToNextError}>
+          <Ban />
+          Skocz do błędu
         </Button>
       </div>
-    </div>
+    </>
   )
 }

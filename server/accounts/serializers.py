@@ -21,6 +21,7 @@ def validate_email(email):
         raise serializers.ValidationError('Niepoprawny format adresu ' + email)
     if domain not in ALLOWED_DOMAINS:
         raise serializers.ValidationError(f'Niedozwolona domena {domain}. Jedyne dozwolone to {", ".join(ALLOWED_DOMAINS)}')
+    return domain
 
 class RegisterSerializer(serializers.ModelSerializer):
 
@@ -56,7 +57,11 @@ class DeanCreateUsersSerializer(serializers.Serializer):
 
     userType = serializers.ChoiceField(USER_TYPES)
     newUsers = serializers.ListField()
-    fieldOfStudy = serializers.DictField()
+    chosenFieldsOfStudy = serializers.ListField(
+        child=serializers.DictField(
+            allow_empty=False,
+        ),
+    )
     expirationDate = serializers.DateField()
 
     def validate(self, data):
@@ -68,7 +73,13 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         for user_data in new_users:
             if not isinstance(user_data, dict):
                 raise serializers.ValidationError('Niepoprawny format danych użytkownika!')
-            validate_email(user_data.get('email', ''))
+            domain = validate_email(user_data.get('email', ''))
+            if (
+                (domain == "student.agh.edu.pl" and user_type != "student") or
+                (domain == "agh.edu.pl" and user_type == "student")
+            ):
+                raise serializers.ValidationError("Niepoprawna domena dla danego typu użytkownika")
+
             user_data["password"] = make_password(''.join(secrets.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(PASSWORD_LENGTH)))
 
         existing_users = models.SystemUser.objects.filter(email__in=map(lambda u: u.get('email'), new_users))
@@ -76,15 +87,18 @@ class DeanCreateUsersSerializer(serializers.Serializer):
             invalid_emails = map(lambda u: u.email, existing_users)
             raise serializers.ValidationError(f"Adresy {', '.join(invalid_emails)} są już zajęte")
 
-        field_of_study = data.get('fieldOfStudy', {})
-        field_id = field_of_study.get('id')
-        field_name = field_of_study.get('field')
+        fields_of_study = data.get('chosenFieldsOfStudy', [])
+        if len(fields_of_study) == 0 and user_type.lower() != "dean":
+            raise serializers.ValidationError("Należy podać kierunek studiów przy tworzenia użytkownika!")
 
-        if not models.FieldOfStudy.objects.filter(id=field_id, name=field_name).exists():
-            raise serializers.ValidationError(f"Kierunek {field_name} nie istnieje w bazie danych!")
+        fos_ids = list(map(lambda fos: fos["id"], fields_of_study))
+        fields_of_study = models.FieldOfStudy.objects.filter(id__in=fos_ids)
 
-        field_of_study = models.FieldOfStudy.objects.get(id=field_id)
-        data['field_of_study'] = field_of_study
+        if fields_of_study.count() != len(fos_ids):
+            invalid_fos = set(fos_ids).difference(map(lambda f: f.id, fields_of_study))
+            raise serializers.ValidationError(f"Kierunki {', '.join(invalid_fos)} nie istnieją")
+
+        data['fields_of_study'] = fields_of_study
         exp_date = data.get('expirationDate')
         if datetime.date.today() > exp_date:
             raise serializers.ValidationError("Należy podać datę ważności późniejszą niż dzień dzisiejszy")
@@ -104,20 +118,23 @@ class DeanCreateUsersSerializer(serializers.Serializer):
         with transaction.atomic():
             add_result = models.SystemUser.objects.bulk_create(users)
             for user in add_result:
-                user.field_of_study.add(validated_data["fieldOfStudy"]["id"])
+                user.field_of_study.set(validated_data["fields_of_study"])
         return add_result
 
 class DeanDeleteUsersSerializer(serializers.Serializer):
     usersToDelete = serializers.ListField(
-        child=serializers.EmailField(),
+        child=serializers.DictField(
+            child=serializers.EmailField(),
+            allow_empty=False,
+            allow_null=False
+        ),
         allow_empty=False
     )
 
     def validate(self, data):
-        emails = data.get('usersToDelete', [])
+        emails = list(map(lambda user: user['email'], data.get("usersToDelete")))
         for email in emails:
             validate_email(email)
-
         users = models.SystemUser.objects.filter(email__in=emails)
         if users.filter(is_dean=True).exists():
             raise serializers.ValidationError("Brak uprawnień usuwania pracowników dziekanatu!")
@@ -146,7 +163,7 @@ class LoginSerializer(TokenObtainPairSerializer):
 class FieldOfStudySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.FieldOfStudy
-        fields = ('id', 'name', 'description')
+        fields = ('id', 'name')
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -155,13 +172,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SupervisorSerializer(serializers.ModelSerializer):
     free_spots = serializers.IntegerField(default=0)
+    thesis_count = serializers.IntegerField(default=0)
     total_spots = serializers.IntegerField(default=0)
     field_of_study = FieldOfStudySerializer(read_only=True, many=True)
 
     class Meta:
         model = models.SystemUser
         fields = ('id', 'email', 'title', 'first_name', 'last_name', 'field_of_study',
-                  'free_spots', 'total_spots')
+                  'free_spots', 'thesis_count', 'total_spots', 'description')
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
@@ -174,7 +192,17 @@ class SetPasswordSerializer(serializers.Serializer):
 class PersonalDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SystemUser
-        fields = ('first_name', 'last_name', 'email')
+        fields = ('first_name', 'last_name', 'email', 'title', 'total_spots')
+
+    def validate_total_spots(self, value):
+        user = self.instance
+        if user and user.is_supervisor:
+            current_theses = user.owned_theses.count()
+            if value is not None and value < current_theses:
+                raise serializers.ValidationError(
+                    f" Nie można ustawić limitu poniżej liczby aktualnie nadzorowanych prac dyplomowych ({current_theses})."
+                )
+        return value
 
 class SupervisorViewSerializer(serializers.ModelSerializer):
     free_spots = serializers.SerializerMethodField()

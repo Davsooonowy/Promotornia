@@ -1,18 +1,14 @@
 "use client"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import type {
-  FieldOfStudy,
-  Tag,
-  ThesisDetails,
-  ThesisStatus,
-} from "@/util/types"
+import { FieldOfStudy, Tag, ThesisDetails, ThesisStatus } from "@/util/types"
+import { UserRole } from "@/util/enums"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   User,
@@ -31,8 +27,14 @@ import EditThesisStatusDialog from "@/components/features/thesis/EditThesisStatu
 import EditFieldOfStudyDialog from "@/components/features/thesis/EditFieldOfStudyDialog"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  ThesisStatusChangedContext,
+  ThesisStatusChangedContextType,
+} from "@/components/context/ThesisStatusChangedContext"
+import AssignStudentDialog from "@/components/features/thesis/AssignStudentDialog"
 
 export default function Thesis() {
+  const router = useRouter()
   const { thesisId } = useParams<{ thesisId: string }>()
   const numericThesisId = Number(thesisId)
 
@@ -61,7 +63,14 @@ export default function Thesis() {
     string | null
   >(null)
 
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+
   const { tokenPayload } = useDecodeToken()
+
+  const thesisStatusChanged = useContext<
+    ThesisStatusChangedContextType | undefined
+  >(ThesisStatusChangedContext)
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
@@ -171,6 +180,9 @@ export default function Thesis() {
 
   const changeThesisStatusMutation = useMutation({
     mutationFn: async (newStatus: ThesisStatus) => {
+      if (newStatus === "Dostępny" && !thesis?.fieldOfStudy) {
+        throw new Error("Wybierz kierunek studiów.")
+      }
       const token = localStorage.getItem("token")
       const response = await fetch(
         `${apiUrl}/theses/${numericThesisId}/status/edit/`,
@@ -195,6 +207,8 @@ export default function Thesis() {
     onSuccess: () => {
       setMutationSuccessMessage("Zmieniono status pracy.")
       thesisFetch.mutate()
+      setHasUnsavedChanges(false)
+      thesisStatusChanged?.setThesisStatusChanged(true)
     },
   })
 
@@ -229,6 +243,7 @@ export default function Thesis() {
     },
     onSuccess: () => {
       setMutationSuccessMessage("Zapisano zmiany")
+      setHasUnsavedChanges(false)
     },
   })
 
@@ -236,15 +251,12 @@ export default function Thesis() {
     mutationFn: async () => {
       const token = localStorage.getItem("token")
       if (!thesis) throw new Error("Nie znaleziono pracy.")
-      const response = await fetch(`${apiUrl}/theses/${numericThesisId}/`, {
+      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          id: thesis.id,
-        }),
       })
       if (!response.ok) {
         throw new Error("Nie udało się usunąć pracy.")
@@ -255,6 +267,36 @@ export default function Thesis() {
     },
     onSuccess: () => {
       setMutationSuccessMessage("Usunięto pracę")
+      router.push("/protected/supervisor/profile")
+    },
+  })
+
+  const assignStudentMutation = useMutation({
+    mutationFn: async (studentId: number) => {
+      const token = localStorage.getItem("token")
+      const response = await fetch(
+        `${apiUrl}/theses/${numericThesisId}/assign_student/`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            producer_id: studentId,
+          }),
+        },
+      )
+      if (!response.ok) {
+        throw new Error("Nie udało się przypisać studenta.")
+      }
+    },
+    onError: (e) => setMutationError(e.message),
+    onSuccess: () => {
+      setMutationSuccessMessage("Przypisano studenta do pracy")
+      thesisFetch.mutate()
+      setAssignDialogOpen(false)
+      setHasUnsavedChanges(false)
     },
   })
 
@@ -387,6 +429,11 @@ export default function Thesis() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
+                {hasUnsavedChanges && (
+                  <Label className="font-semibold">
+                    Masz niezapisane zamiany!
+                  </Label>
+                )}
                 <Checkbox
                   checked={editionMode}
                   onCheckedChange={toggleEditionMode}
@@ -405,6 +452,7 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Hide or publish"
+                  userRole={UserRole.supervisor}
                 />
               </div>
             </div>
@@ -440,6 +488,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="title"
                     label="Edytuj tytuł"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </div>
@@ -473,6 +522,7 @@ export default function Thesis() {
                       thesis={thesis}
                       setThesis={setThesis}
                       fieldsOfStudy={fieldsOfStudy}
+                      setHasUnsavedChanges={setHasUnsavedChanges}
                     />
                   ))}
               </div>
@@ -502,6 +552,8 @@ export default function Thesis() {
                     thesis={thesis}
                     setThesis={setThesis}
                     allTags={allTags}
+                    allTagsFetch={allTagsFetch}
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </div>
@@ -518,6 +570,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="description"
                     label="Edytuj opis"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </CardTitle>
@@ -539,6 +592,7 @@ export default function Thesis() {
                     setThesis={setThesis}
                     field="prerequisitesDescription"
                     label="Edytuj wymagania"
+                    setHasUnsavedChanges={setHasUnsavedChanges}
                   />
                 )}
               </CardTitle>
@@ -563,7 +617,38 @@ export default function Thesis() {
                   setThesis={setThesis}
                   changeThesisStatusMutation={changeThesisStatusMutation}
                   newStatus="Student zaakceptowany"
+                  userRole={UserRole.supervisor}
                 />
+              )}
+              {thesis.status === "Zarezerwowany" && editionMode && (
+                <EditThesisStatusDialog
+                  thesis={thesis}
+                  setThesis={setThesis}
+                  changeThesisStatusMutation={changeThesisStatusMutation}
+                  newStatus="Dostępny"
+                  oldStatus="Zarezerwowany"
+                  userRole={UserRole.supervisor}
+                />
+              )}
+              {thesis.status === "Dostępny" && editionMode && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => setAssignDialogOpen(true)}
+                  >
+                    <User className="h-4 w-4" />
+                    Przypisz studenta
+                  </Button>
+                  <AssignStudentDialog
+                    open={assignDialogOpen}
+                    setOpen={setAssignDialogOpen}
+                    onAssign={(studentId: number) =>
+                      assignStudentMutation.mutate(studentId)
+                    }
+                    thesisId={numericThesisId}
+                  />
+                </>
               )}
 
               {thesis.status === "Ukryty" && (

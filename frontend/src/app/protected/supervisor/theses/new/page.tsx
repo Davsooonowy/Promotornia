@@ -8,6 +8,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
+import { BookOpen, Pencil } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
 export default function New() {
   const router = useRouter()
@@ -61,12 +63,20 @@ export default function New() {
         <h1 className="text-3xl">Tworzę nową pracę...</h1>
       ) : (
         thesisId && (
-          <>
-            <Label className="mb-3">Utworzono pracę</Label>
-            <Link href={`/protected/supervisor/theses/${thesisId}`}>
-              <Button>Przejdź do pracy</Button>
-            </Link>
-          </>
+          <Card>
+            <CardContent>
+              <Label className="mb-3">
+                <BookOpen /> Świetnie! Udało się utworzyć pracę. Na razie jest
+                ona ukryta dla innych. Możesz ją edytować, a następnie
+                udostępnić.
+              </Label>
+              <Link href={`/protected/supervisor/theses/${thesisId}`}>
+                <Button>
+                  <Pencil /> Przejdź do pracy
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         )
       )}
     </>

@@ -22,6 +22,7 @@ export default function EditFieldOfStudyDialog(props: {
   thesis: ThesisDetails | null
   setThesis: Dispatch<SetStateAction<ThesisDetails | null>>
   fieldsOfStudy: FieldOfStudy[] | null
+  setHasUnsavedChanges: Dispatch<SetStateAction<boolean>>
 }) {
   const [valueBeforeEdition, setValueBeforeEdition] =
     useState<FieldOfStudy | null>(null)
@@ -48,6 +49,7 @@ export default function EditFieldOfStudyDialog(props: {
 
   const handleSave = () => {
     setDialogOpen(false)
+    props.setHasUnsavedChanges(true)
   }
 
   return (

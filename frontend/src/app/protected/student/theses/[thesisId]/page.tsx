@@ -1,7 +1,7 @@
 "use client"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import apiUrl from "@/util/apiUrl"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,8 +19,14 @@ import { toast } from "sonner"
 import EditThesisStatusDialog from "@/components/features/thesis/EditThesisStatusDialog"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  ThesisStatusChangedContext,
+  ThesisStatusChangedContextType,
+} from "@/components/context/ThesisStatusChangedContext"
 
 export default function Thesis() {
+  const router = useRouter()
+
   const { thesisId } = useParams<{ thesisId: string }>()
   const numericThesisId = Number(thesisId)
 
@@ -34,12 +40,15 @@ export default function Thesis() {
   >(null)
 
   const { tokenPayload } = useDecodeToken()
-  const userId = tokenPayload?.user_id
+
+  const thesisStatusChanged = useContext<
+    ThesisStatusChangedContextType | undefined
+  >(ThesisStatusChangedContext)
 
   const thesisFetch = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${apiUrl}/thesis/producer/${userId}/`, {
+      const response = await fetch(`${apiUrl}/thesis/${numericThesisId}/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -103,13 +112,16 @@ export default function Thesis() {
       if (!response.ok) {
         throw new Error("Nie udało się zmienić statusu pracy.")
       }
+      return newStatus
     },
     onError: (e) => {
       setMutationError(e.message)
     },
-    onSuccess: () => {
+    onSuccess: (newStatus) => {
       setMutationSuccessMessage("Zmieniono status pracy.")
       thesisFetch.mutate()
+      thesisStatusChanged?.setThesisStatusChanged(true)
+      if (newStatus === "Dostępny") router.push("/protected/student/profile")
     },
   })
 
@@ -174,6 +186,11 @@ export default function Thesis() {
     tokenPayload &&
     thesis.reservedBy?.id === tokenPayload.user_id &&
     thesis.status === "Student zaakceptowany"
+  const canCancelReservation =
+    tokenPayload &&
+    thesis.reservedBy?.id === tokenPayload.user_id &&
+    (thesis.status === "Student zaakceptowany" ||
+      thesis.status === "Zarezerwowany")
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -288,7 +305,16 @@ export default function Thesis() {
                 />
               )}
 
-              {!canReserve && !canApprove && (
+              {canCancelReservation && (
+                <EditThesisStatusDialog
+                  thesis={thesis}
+                  setThesis={setThesis}
+                  changeThesisStatusMutation={changeThesisStatusMutation}
+                  newStatus="Dostępny"
+                />
+              )}
+
+              {!canReserve && !canApprove && !canCancelReservation && (
                 <div className="py-4 text-center">
                   <CheckCircle className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
                   <p className="text-muted-foreground text-sm">

@@ -40,13 +40,19 @@ class ThesisSerializer(serializers.ModelSerializer):
         model = models.Thesis
         fields = '__all__'
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        discarded_fields = self.context.get("discarded_fields", [])
+        for field in discarded_fields:
+            data.pop(field, None)
+        return data
+
 class UpdateThesisSerializer(serializers.Serializer):
     title = serializers.CharField(required=False, default="")
     field_of_study = serializers.DictField(required=False, default={})
     description = serializers.CharField(required=False, default="")
     prerequisites_description = serializers.CharField(required=False, default="")
     tags = serializers.ListField(required=False, default=[])
-    producer_id = serializers.IntegerField(required=False, default=None)
 
     def validate(self, attrs):
         attrs["name"] = attrs.pop("title")

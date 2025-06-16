@@ -28,7 +28,7 @@ export default function OwnTheses() {
   const [supervisor, setSupervisor] = useState<Supervisor | null>(null)
   const [theses, setTheses] = useState<ThesisDetails[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4", 10)
+  const itemsPerPage = Number.parseInt(process.env.ITEMS_PER_PAGE || "4")
 
   useEffect(() => {
     const fetchSupervisorAndTheses = async () => {
@@ -55,7 +55,9 @@ export default function OwnTheses() {
           id: supervisorData.id,
           name: `${supervisorData.title} ${supervisorData.first_name} ${supervisorData.last_name}`,
           email: supervisorData.email,
-          department: supervisorData.field_of_study.name,
+          departments: supervisorData.field_of_study.map(
+            (field: { id: number; name: string }) => field.name,
+          ),
           specialization: supervisorData.description || "N/A",
           availableSlots: supervisorData.free_spots,
           totalSlots: supervisorData.total_spots,
@@ -159,76 +161,87 @@ export default function OwnTheses() {
             </CardContent>
           </Card>
         ) : (
-          theses.map((thesis) => (
-            <Card key={thesis.id} className="transition-shadow hover:shadow-md">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className="text-muted-foreground h-5 w-5" />
-                        <Link
-                          href={`/protected/supervisor/theses/${thesis.id}`}
-                          className="text-lg font-medium hover:underline"
-                        >
-                          {thesis.title}
-                        </Link>
+          theses
+            .filter(
+              (item, index) =>
+                index >= (currentPage - 1) * 4 && index <= currentPage * 4 - 1,
+            )
+            .map((thesis) => (
+              <Card
+                key={thesis.id}
+                className="transition-shadow hover:shadow-md"
+              >
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <FileText className="text-muted-foreground h-5 w-5" />
+                          <Link
+                            href={`/protected/supervisor/theses/${thesis.id}`}
+                            className="text-lg font-medium hover:underline"
+                          >
+                            {thesis.title}
+                          </Link>
+                        </div>
+                        <p className="text-sm">
+                          Katedra:{" "}
+                          {thesis.fieldOfStudy
+                            ? thesis.fieldOfStudy.name
+                            : "Nie wybrano"}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          Dodano: {thesis.createdAt}
+                        </p>
                       </div>
-                      <p className="text-sm">
-                        Katedra: {thesis.fieldOfStudy.name}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        Dodano: {thesis.createdAt}
-                      </p>
-                    </div>
 
-                    <div className="text-right">
-                      <Badge
-                        className={
-                          thesis.status === "Dostępny"
-                            ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
-                            : "bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
-                        }
-                      >
-                        {thesis.status}
-                      </Badge>
-                      <div className="mt-4 flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="cursor-pointer"
-                          onClick={() =>
-                            router.push(
-                              `/protected/supervisor/theses/${thesis.id}`,
-                            )
+                      <div className="text-right">
+                        <Badge
+                          className={
+                            thesis.status === "Dostępny"
+                              ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
                           }
                         >
-                          Szczegóły
-                        </Button>
+                          {thesis.status}
+                        </Badge>
+                        <div className="mt-4 flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="cursor-pointer"
+                            onClick={() =>
+                              router.push(
+                                `/protected/supervisor/theses/${thesis.id}`,
+                              )
+                            }
+                          >
+                            Szczegóły
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {thesis.tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
+                    <div className="flex flex-wrap gap-2">
+                      {thesis.tags.map((tag) => (
+                        <Badge key={tag.id} variant="secondary">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
 
-                  {/*{thesis.reservedBy && (*/}
-                  {/*  <div className="text-muted-foreground text-sm">*/}
-                  {/*    Zarezerwowany przez:{" "}*/}
-                  {/*    <span className="font-medium">*/}
-                  {/*      {thesis.reservedBy.id}*/}
-                  {/*    </span>*/}
-                  {/*  </div>*/}
-                  {/*)}*/}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                    {/*{thesis.reservedBy && (*/}
+                    {/*  <div className="text-muted-foreground text-sm">*/}
+                    {/*    Zarezerwowany przez:{" "}*/}
+                    {/*    <span className="font-medium">*/}
+                    {/*      {thesis.reservedBy.id}*/}
+                    {/*    </span>*/}
+                    {/*  </div>*/}
+                    {/*)}*/}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
         )}
       </div>
 

@@ -33,9 +33,9 @@ export default function NewUserCard(props: {
             type="email"
             placeholder="Email..."
             value={props.newUser.email}
-            onChange={(e) =>
+            onChange={(e) => {
               props.handleUpdateEmail(props.newUser.key, e.currentTarget.value)
-            }
+            }}
             onInput={(e) =>
               props.handleUpdateEmail(props.newUser.key, e.currentTarget.value)
             }
