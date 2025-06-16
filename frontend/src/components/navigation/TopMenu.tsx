@@ -71,7 +71,7 @@ export function Navbar({ navItems, userRoleHref, roleName }: NavbarProps) {
         <div className="flex items-center gap-2">
           <GraduationCap className="text-primary h-8 w-8" />
           <span className="hidden text-xl font-bold md:inline-block">
-            Promotornia
+            DyplomNet
           </span>
         </div>
 

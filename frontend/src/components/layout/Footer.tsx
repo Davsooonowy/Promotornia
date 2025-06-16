@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex flex-col items-center justify-between md:flex-row">
           <div className="mb-4 md:mb-0">
             <p className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} Promotornia - System zarządzania
+              © {new Date().getFullYear()} DyplomNet - System zarządzania
               pracami dyplomowymi
             </p>
           </div>

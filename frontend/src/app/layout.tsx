@@ -4,7 +4,7 @@ import "./globals.css"
 import { RootLayoutClient } from "./RootLayoutClient"
 
 export const metadata: Metadata = {
-  title: "Promotornia",
+  title: "DyplomNet",
   description: "System zarządzania pracami dyplomowymi dla uczelni wyższych",
 }
 
