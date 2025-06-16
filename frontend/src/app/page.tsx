@@ -153,7 +153,7 @@ export default function Home() {
                 <div className="bg-primary/10 mx-auto flex h-12 w-12 items-center justify-center rounded-full">
                   <GraduationCap className="text-primary h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl">Promotornia</CardTitle>
+                <CardTitle className="text-2xl">DyplomNet</CardTitle>
                 <CardDescription>
                   System zarządzania pracami dyplomowymi
                 </CardDescription>
