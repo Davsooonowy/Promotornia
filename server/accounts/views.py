@@ -14,6 +14,7 @@ from django.utils import timezone
 from datetime import timedelta
 from . import permissions, models
 from . import serializers
+from theses import models as thesis_models
 import os
 
 
@@ -41,14 +42,17 @@ class DeanView(APIView):
             result = serializer.save()
             # mailing logic
             for user in result:
+                otp_ttl_days = 2
                 otp = OneTimePasswordLink.objects.create(
                     user=user,
-                    expires_at=timezone.now() + timedelta(hours=1)
+                    expires_at=timezone.now() + timedelta(days=otp_ttl_days)
                 )
                 url = f"{os.getenv('CORS_ALLOWED_ORIGINS')}/set_password?{urlencode({'token': str(otp.token)})}"
+                subject = "Dostęp do systemu DyplomNet"
+                message = f"Witaj w systemie DyplomNet!\n\nOtwórz poniższy link aby ustawić swoje hasło dostępu. Link jest ważny {otp_ttl_days} dni.\n\n{url}\n\nW razie utraty ważności linku skontaktuj się z dziekanatem."
                 send_mail(
-                    subject='Ustaw swoje hasło',
-                    message=f"Otwórz link, aby ustawić hasło:\n\n{url}",
+                    subject=subject,
+                    message=message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
                     fail_silently=False,
@@ -60,6 +64,15 @@ class DeanView(APIView):
         serializer = serializers.DeanDeleteUsersSerializer(data=request.data)
         if serializer.is_valid():
             users = serializer.validated_data
+
+            for user in filter(lambda u: u.is_student, users):
+                try:
+                    thesis = thesis_models.Thesis.objects.get(producer=user)
+                except thesis_models.Thesis.DoesNotExist:
+                    continue
+                thesis.status = "Dostępny"
+                thesis.save()
+
             users.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

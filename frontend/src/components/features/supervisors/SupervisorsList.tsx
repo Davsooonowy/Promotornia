@@ -348,7 +348,10 @@ export default function SupervisorsList({
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                onClick={() => {
+                  setCurrentPage((p) => Math.max(1, p - 1))
+                  supervisorsFetch.mutate()
+                }}
                 className={
                   currentPage === 1
                     ? "pointer-events-none opacity-50"
@@ -369,7 +372,10 @@ export default function SupervisorsList({
                   <PaginationItem key={page}>
                     <PaginationLink
                       isActive={page === currentPage}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => {
+                        setCurrentPage(page)
+                        supervisorsFetch.mutate()
+                      }}
                       className="cursor-pointer"
                     >
                       {page}
@@ -387,9 +393,10 @@ export default function SupervisorsList({
 
             <PaginationItem>
               <PaginationNext
-                onClick={() =>
+                onClick={() => {
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
+                  supervisorsFetch.mutate()
+                }}
                 className={
                   currentPage === totalPages
                     ? "pointer-events-none opacity-50"

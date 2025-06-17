@@ -6,6 +6,9 @@ from django.utils import timezone
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        ordering = ['name']
+
 class Thesis(models.Model):
     name = models.CharField(
         max_length=255,
