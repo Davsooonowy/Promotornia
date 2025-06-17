@@ -20,7 +20,6 @@ import {
 import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { GraduationCap, AlertCircle } from "lucide-react"
-import Link from "next/link"
 import apiUrl from "@/util/apiUrl"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 
