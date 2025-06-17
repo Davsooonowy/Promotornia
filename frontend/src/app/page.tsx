@@ -20,7 +20,6 @@ import {
 import { useRouter } from "next/navigation"
 import useDecodeToken from "@/hooks/useDecodeToken"
 import { GraduationCap, AlertCircle } from "lucide-react"
-import Link from "next/link"
 import apiUrl from "@/util/apiUrl"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 
@@ -176,12 +175,6 @@ export default function Home() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Hasło</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-primary text-xs hover:underline"
-                    >
-                      Zapomniałem hasła
-                    </Link>
                   </div>
                   <Input
                     id="password"
