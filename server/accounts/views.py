@@ -14,6 +14,7 @@ from django.utils import timezone
 from datetime import timedelta
 from . import permissions, models
 from . import serializers
+from theses import models as thesis_models
 import os
 
 
@@ -63,6 +64,15 @@ class DeanView(APIView):
         serializer = serializers.DeanDeleteUsersSerializer(data=request.data)
         if serializer.is_valid():
             users = serializer.validated_data
+
+            for user in filter(lambda u: u.is_student, users):
+                try:
+                    thesis = thesis_models.Thesis.objects.get(producer=user)
+                except thesis_models.Thesis.DoesNotExist:
+                    continue
+                thesis.status = "Dostępny"
+                thesis.save()
+
             users.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
