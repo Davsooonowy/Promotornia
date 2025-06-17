@@ -176,12 +176,6 @@ export default function Home() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Hasło</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-primary text-xs hover:underline"
-                    >
-                      Zapomniałem hasła
-                    </Link>
                   </div>
                   <Input
                     id="password"
